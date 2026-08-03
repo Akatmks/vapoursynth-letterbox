@@ -3,6 +3,10 @@ project('vsletterbox', 'c', 'cpp',
   default_options: ['c_std=c99', 'cpp_std=c++20', 'buildtype=release', 'b_ndebug=if-release', 'b_lto=true']
 )
 
+sources = [
+  'vsletterboxc/vsletterbox.cpp'
+]
+
 py = import('python').find_installation(pure: false)
 
 vapoursynth_include = run_command(
