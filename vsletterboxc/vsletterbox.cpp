@@ -140,10 +140,8 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         auto exceed = false;
         for (; start_y < height; start_y++) {
             #pragma clang loop vectorize(enable) interleave(enable)
-            for (int x = 0; x < width; x++) {
-                if (srcp[x] < low_thr || srcp[x] > high_thr)
-                    exceed = true;
-            }
+            for (int x = 0; x < width; x++)
+                exceed |= srcp[x] < low_thr || srcp[x] > high_thr;
             if (exceed)
                 break;
 
@@ -164,10 +162,8 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             exceed = false;
             for (; end_y >= 0; end_y--) {
                 #pragma clang loop vectorize(enable) interleave(enable)
-                for (int x = 0; x < width; x++) {
-                    if (srcp[x] < low_thr || srcp[x] > high_thr)
-                        exceed = true;
-                }
+                for (int x = 0; x < width; x++)
+                    exceed |= srcp[x] < low_thr || srcp[x] > high_thr;
                 if (exceed)
                     break;
 
