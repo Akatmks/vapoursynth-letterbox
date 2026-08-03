@@ -18,10 +18,11 @@ jobs:
     - uses: actions/setup-python@v7
       with:
         python-version: "3.13"
-    - run: python -m pip install meson ninja cibuildwheel
+    - run: python -m pip install build meson-python meson ninja
 
-    - run: python -m cibuildwheel --output-dir wheelhouse
+    - run: python -m pip install pyproject.toml
+    - run: python -m build --no-isolation
 
     - uses: actions/upload-artifact@v7
       with:
-        path: ./wheelhouse/*.whl
+        path: ./dist/*.whl
