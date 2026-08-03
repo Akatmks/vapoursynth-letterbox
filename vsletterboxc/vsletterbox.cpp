@@ -60,12 +60,18 @@ static inline double letterbox_search_get_frame_ref_mean(const T * VS_RESTRICT r
                                           double>>
         sum = 0;
     if constexpr (std::is_integral_v<T>) {
-        for (int x = 0; x < width; x++)
+        #pragma clang loop vectorize(enable) interleave(enable)
+        for (int x = 0; x < width; x++) {
+            #pragma clang fp reassociate(on)
             sum += refp[x];
+        }
     }
     else {
-        for (int x = 0; x < width; x++)
+        #pragma clang loop vectorize(enable) interleave(enable)
+        for (int x = 0; x < width; x++) {
+            #pragma clang fp reassociate(on)
             sum += std::clamp(refp[x], min_value, max_value);
+        }
     }
 
     return (double)sum / width / max_value;
@@ -133,11 +139,10 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         auto refp = ori_refp;
         auto exceed = false;
         for (; start_y < height; start_y++) {
+            #pragma clang loop vectorize(enable) interleave(enable)
             for (int x = 0; x < width; x++) {
-                if (srcp[x] < low_thr || srcp[x] > high_thr) {
+                if (srcp[x] < low_thr || srcp[x] > high_thr)
                     exceed = true;
-                    break;
-                }
             }
             if (exceed)
                 break;
@@ -158,11 +163,10 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             refp = ori_refp + end_y * ref_stride;
             exceed = false;
             for (; end_y >= 0; end_y--) {
+                #pragma clang loop vectorize(enable) interleave(enable)
                 for (int x = 0; x < width; x++) {
-                    if (srcp[x] < low_thr || srcp[x] > high_thr) {
+                    if (srcp[x] < low_thr || srcp[x] > high_thr)
                         exceed = true;
-                        break;
-                    }
                 }
                 if (exceed)
                     break;
