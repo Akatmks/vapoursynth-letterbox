@@ -14,16 +14,11 @@ jobs:
       with:
         msystem: CLANG64
         path-type: inherit
-        install: >-
-          mingw-w64-clang-x86_64-meson
-          mingw-w64-clang-x86_64-ninja
     - uses: ZhongRuoyu/setup-llvm@v0
     - uses: actions/setup-python@v7
       with:
         python-version: "3.13"
-    - run: which python
-    - run: echo $pythonLocation
-    - run: python -m pip install cibuildwheel
+    - run: python -m pip install meson ninja cibuildwheel
 
     - run: python -m cibuildwheel --output-dir wheelhouse
 
