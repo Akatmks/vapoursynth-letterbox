@@ -96,8 +96,8 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         T          low_thr;
         T          high_thr;
         if constexpr (std::is_integral_v<T>) {
-            low_thr          = static_cast<T>(std::clamp(d->low_thr, std::numeric_limits<T>::min(), std::numeric_limits<T>::max) + 0.5);
-            high_thr         = static_cast<T>(std::clamp(d->high_thr, std::numeric_limits<T>::min(), std::numeric_limits<T>::max) + 0.5);
+            low_thr          = static_cast<T>(std::clamp(d->low_thr, std::numeric_limits<T>::min(), std::numeric_limits<T>::max()) + 0.5);
+            high_thr         = static_cast<T>(std::clamp(d->high_thr, std::numeric_limits<T>::min(), std::numeric_limits<T>::max()) + 0.5);
         }
         else {
             low_thr          = d->low_thr;
@@ -118,9 +118,9 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         auto dst   = vsapi->copyFrame(clip, core);
         auto props = vsapi->getFramePropertiesRW(dst);
 
-        const T * VS_RESTRICT ori_srcp   = static_cast<const T *>(vsapi->getReadPtr(clip, 0));
+        const T * VS_RESTRICT ori_srcp   = reinterpret_cast<const T *>(vsapi->getReadPtr(clip, 0));
         const auto            src_stride = vsapi->getStride(clip, 0) / sizeof(T);
-        const T * VS_RESTRICT ori_refp   = static_cast<const T *>(vsapi->getReadPtr(ref, 0));
+        const T * VS_RESTRICT ori_refp   = reinterpret_cast<const T *>(vsapi->getReadPtr(ref, 0));
         const auto            ref_stride = vsapi->getStride(ref, 0) / sizeof(T);
 
         int start_y = 0;
@@ -143,9 +143,10 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             refp += ref_stride;
         }
 
-        if (!exceed)
+        if (!exceed) {
             start_y = height >> 1 + 1;
             end_y = height >> 1;
+        }
         else [[likely]] {
             if (letterbox_search_get_frame_ref_mean<T>(refp, width) < ref_thr)
                 start_y = 0;
