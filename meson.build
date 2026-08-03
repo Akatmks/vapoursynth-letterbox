@@ -3,16 +3,16 @@ project('vsletterbox', 'c', 'cpp',
   default_options: ['c_std=c99', 'cpp_std=c++20', 'buildtype=release', 'b_ndebug=if-release', 'b_lto=true']
 )
 
-sources = [
-  'vsletterboxc/vsletterbox.cpp'
-]
-
-vapoursynth = dependency('vapoursynth').partial_dependency(compile_args: true, includes: true)
-
 py = import('python').find_installation(pure: false)
 
-plugin = shared_library('vsletterbox', sources,
-  dependencies: [vapoursynth],
+vapoursynth_include = run_command(
+  py, '-c', 'import vapoursynth as vs; print(vs.get_include())',
+  check: true,
+)
+vapoursynth_include = include_directories(vapoursynth_include.stdout().strip())
+
+shared_library('vsletterbox', sources,
+  include_directories: [vapoursynth_include],
   install: true,
   install_dir: py.get_install_dir(pure: false, subdir: 'vapoursynth/plugins')
 )
