@@ -1,0 +1,32 @@
+[build-system]
+requires = ["meson-python"]
+build-backend = "mesonpy"
+
+[project]
+name = "vapoursynth-letterbox"
+description = "Find and mask letterbox for VapourSynth"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "vapoursynth"
+]
+license = "MIT"
+keywords = ["VapourSynth"]
+authors = [
+  { name = "Akatsumekusa", email = "Akatsumekusa@protonmail.com" },
+]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: C++",
+  "Topic :: Multimedia :: Video"
+]
+dynamic = ["version"]
+
+[project.urls]
+Documentation = "https://github.com/Akatmks/vapoursynth-letterbox"
+Issues = "https://github.com/Akatmks/vapoursynth-letterbox/issues"
+Source = "https://github.com/Akatmks/vapoursynth-letterbox"
