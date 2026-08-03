@@ -29,8 +29,8 @@
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
-#include <VapourSynth.h>
-#include <VSHelper.h>
+#include <VapourSynth4.h>
+#include <VSHelper4.h>
 
 struct FindData {
     VSNode *clip;
