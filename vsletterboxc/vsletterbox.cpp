@@ -36,8 +36,8 @@ struct FindData {
     VSNode *clip;
     VSNode *ref;
     double  ref_thr;
-    double  low_thr;
-    double  high_thr;
+    double  bord_thr;
+    double  cutoff_thr;
 };
 
 template <typename T>
@@ -98,20 +98,20 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             return nullptr;
         }
 
-        const auto ref_thr   = d->ref_thr;
-        T          low_thr;
-        T          high_thr;
+        const auto ref_thr     = d->ref_thr;
+        T          bord_thr;
+        T          cutoff_thr;
         if constexpr (std::is_integral_v<T>) {
-            low_thr          = static_cast<T>(std::clamp(d->low_thr,
-                                                         static_cast<double>(std::numeric_limits<T>::min()),
-                                                         static_cast<double>(std::numeric_limits<T>::max())) + 0.5);
-            high_thr         = static_cast<T>(std::clamp(d->high_thr,
-                                                         static_cast<double>(std::numeric_limits<T>::min()),
-                                                         static_cast<double>(std::numeric_limits<T>::max())) + 0.5);
+            bord_thr           = static_cast<T>(std::clamp(d->bord_thr,
+                                                           static_cast<double>(std::numeric_limits<T>::min()),
+                                                           static_cast<double>(std::numeric_limits<T>::max())) + 0.5);
+            cutoff_thr         = static_cast<T>(std::clamp(d->cutoff_thr,
+                                                           static_cast<double>(std::numeric_limits<T>::min()),
+                                                           static_cast<double>(std::numeric_limits<T>::max())) + 0.5);
         }
         else {
-            low_thr          = d->low_thr;
-            high_thr         = d->high_thr;
+            bord_thr           = d->bord_thr;
+            cutoff_thr         = d->cutoff_thr;
         }
 
         const int  height = vsapi->getFrameHeight(clip, 0);
@@ -137,40 +137,60 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
 
         auto srcp = ori_srcp;
         auto refp = ori_refp;
-        auto exceed = false;
+        auto bord_y = height;
+        auto bord   = false;
+        auto cutoff = false;
         for (; start_y < height; start_y++) {
+            bord    = false;
             #pragma clang loop vectorize(enable) interleave(enable)
-            for (int x = 0; x < width; x++)
-                exceed |= srcp[x] < low_thr || srcp[x] > high_thr;
-            if (exceed)
+            for (int x = 0; x < width; x++) {
+                bord   |= srcp[x] > bord_thr;
+                cutoff |= srcp[x] > cutoff_thr;
+            }
+            if (bord)
+                bord_y = std::min(bord_y, start_y);
+            else
+                bord_y = height;
+            if (cutoff)
                 break;
 
             srcp += src_stride;
             refp += ref_stride;
         }
 
-        if (!exceed) {
+        if (!cutoff) {
             start_y = (height >> 1) + 1;
             end_y = height >> 1;
         }
         else [[likely]] {
             if (letterbox_search_get_frame_ref_mean<T>(refp, width) < ref_thr)
                 start_y = 0;
+            if (bord_y == start_y - 1)
+                start_y = bord_y;
 
             srcp = ori_srcp + end_y * src_stride;
             refp = ori_refp + end_y * ref_stride;
-            exceed = false;
+            bord_y = -1;
+            bord   = false;
+            cutoff = false;
             for (; end_y >= 0; end_y--) {
+                bord = false;
                 #pragma clang loop vectorize(enable) interleave(enable)
-                for (int x = 0; x < width; x++)
-                    exceed |= srcp[x] < low_thr || srcp[x] > high_thr;
-                if (exceed)
+                for (int x = 0; x < width; x++) {
+                    bord   |= srcp[x] > bord_thr;
+                    cutoff |= srcp[x] > cutoff_thr;
+                }
+                if (bord)
+                    bord_y = std::max(bord_y, end_y);
+                else
+                    bord_y = -1;
+                if (cutoff)
                     break;
 
                 srcp -= src_stride;
                 refp -= ref_stride;
             }
-            if (!exceed) {
+            if (!cutoff) {
                 vsapi->freeFrame(clip);
                 vsapi->freeFrame(ref);
                 vsapi->freeFrame(dst);
@@ -180,6 +200,8 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             else [[likely]] {
                 if (letterbox_search_get_frame_ref_mean<T>(refp, width) < ref_thr)
                     end_y = height - 1;
+                if (bord_y == end_y + 1)
+                    end_y = bord_y;
             }
         }
 
@@ -222,9 +244,9 @@ static void VS_CC letterbox_search_create(const VSMap *in, VSMap *out, void *use
         return;
     }
 
-    d->ref_thr  = vsapi->mapGetFloat(in, "ref_thr", 0, nullptr);
-    d->low_thr  = vsapi->mapGetFloat(in, "low_thr", 0, nullptr);
-    d->high_thr = vsapi->mapGetFloat(in, "high_thr", 0, nullptr);
+    d->ref_thr    = vsapi->mapGetFloat(in, "ref_thr", 0, nullptr);
+    d->bord_thr   = vsapi->mapGetFloat(in, "bord_thr", 0, nullptr);
+    d->cutoff_thr = vsapi->mapGetFloat(in, "cutoff_thr", 0, nullptr);
     
     VSFilterDependency deps[] = {{d->clip, rpStrictSpatial}, {d->ref, rpStrictSpatial}};
     int num_deps = 2;
@@ -250,6 +272,6 @@ VS_EXTERNAL_API(void) VapourSynthPluginInit2(VSPlugin *plugin, const VSPLUGINAPI
     vspapi->registerFunction("Find", "clip:vnode;"
                                      "ref:vnode;"
                                      "ref_thr:float;"
-                                     "low_thr:float;"
-                                     "high_thr:float;", "clip:vnode;", letterbox_search_create, NULL, plugin);
+                                     "bord_thr:float;"
+                                     "cutoff_thr:float;", "clip:vnode;", letterbox_search_create, NULL, plugin);
 }
