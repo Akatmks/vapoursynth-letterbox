@@ -96,15 +96,18 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         T          low_thr;
         T          high_thr;
         if constexpr (std::is_integral_v<T>) {
-            low_thr          = static_cast<T>(std::clamp(d->low_thr, std::numeric_limits<T>::min(), std::numeric_limits<T>::max()) + 0.5);
-            high_thr         = static_cast<T>(std::clamp(d->high_thr, std::numeric_limits<T>::min(), std::numeric_limits<T>::max()) + 0.5);
+            low_thr          = static_cast<T>(std::clamp(d->low_thr,
+                                                         static_cast<double>(std::numeric_limits<T>::min()),
+                                                         static_cast<double>(std::numeric_limits<T>::max())) + 0.5);
+            high_thr         = static_cast<T>(std::clamp(d->high_thr,
+                                                         static_cast<double>(std::numeric_limits<T>::min()),
+                                                         static_cast<double>(std::numeric_limits<T>::max())) + 0.5);
         }
         else {
             low_thr          = d->low_thr;
             high_thr         = d->high_thr;
         }
 
-        const auto fi     = vsapi->getVideoFrameFormat(clip);
         const int  height = vsapi->getFrameHeight(clip, 0);
         const int  width  = vsapi->getFrameWidth(clip, 0);
         if (height != vsapi->getFrameHeight(ref, 0) ||
@@ -144,7 +147,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         }
 
         if (!exceed) {
-            start_y = height >> 1 + 1;
+            start_y = (height >> 1) + 1;
             end_y = height >> 1;
         }
         else [[likely]] {
