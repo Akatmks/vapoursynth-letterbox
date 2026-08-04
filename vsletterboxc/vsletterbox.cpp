@@ -203,7 +203,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             const auto st_mean = stats.mean();
             const auto st_stddev = stats.stddev();
             if (st_mean && st_stddev &&
-                src_mean > *st_mean + 3 * *st_stddev)
+                src_mean > *st_mean + 5 * *st_stddev)
                 bord_y = std::min(bord_y, start_y);
             else
                 bord_y = height;
