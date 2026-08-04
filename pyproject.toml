@@ -4,7 +4,7 @@ requires = ["meson-python"]
 
 [project]
 name = "vapoursynth-letterbox"
-description = "Find and mask letterbox for VapourSynth"
+description = "Find and clean letterbox for VapourSynth"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [

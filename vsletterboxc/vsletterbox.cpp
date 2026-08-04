@@ -325,7 +325,7 @@ static void VS_CC letterbox_search_create(const VSMap *in, VSMap *out, void *use
 }
 
 VS_EXTERNAL_API(void) VapourSynthPluginInit2(VSPlugin *plugin, const VSPLUGINAPI *vspapi) {
-    vspapi->configPlugin("aka.letterbox", "letterbox", "Letterbox Detection and Masking", VS_MAKE_VERSION(1, 0), VAPOURSYNTH_API_VERSION, 0, plugin);
+    vspapi->configPlugin("aka.letterbox", "letterbox", "Letterbox Detection and Cleaning", VS_MAKE_VERSION(1, 0), VAPOURSYNTH_API_VERSION, 0, plugin);
     vspapi->registerFunction("Find", "clip:vnode;"
                                      "thr:float;"
                                      "ref:vnode;"
