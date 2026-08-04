@@ -202,7 +202,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             const auto st_mean = stats.mean();
             const auto st_stddev = stats.stddev();
             if (st_mean && st_stddev &&
-                src_mean > *st_mean + 3 * std:max(*st_stddev, 0.005))
+                src_mean > *st_mean + 3 * std::max(*st_stddev, 0.005))
                 bord_y = std::min(bord_y, start_y);
             else
                 bord_y = height;
@@ -238,7 +238,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
                 const auto st_mean = stats.mean();
                 const auto st_stddev = stats.stddev();
                 if (st_mean && st_stddev &&
-                    src_mean > *st_mean + 3 * std:max(*st_stddev, 0.005))
+                    src_mean > *st_mean + 3 * std::max(*st_stddev, 0.005))
                     bord_y = std::max(bord_y, end_y);
                 else
                     bord_y = -1;
