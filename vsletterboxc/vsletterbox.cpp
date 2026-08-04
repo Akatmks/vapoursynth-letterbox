@@ -25,7 +25,9 @@
 
 #include <algorithm>
 #include <limits>
+#include <cmath>
 #include <memory>
+#include <optional>
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
@@ -34,24 +36,30 @@
 
 struct FindData {
     VSNode *clip;
+    double  thr;
     VSNode *ref;
     double  ref_thr;
-    double  bord_thr;
-    double  cutoff_thr;
 };
 
 template <typename T>
-static inline double letterbox_search_get_frame_ref_mean(const T * VS_RESTRICT refp, int width) {
-    T max_value;
-    T min_value;
-    if constexpr (std::is_integral_v<T>) {
-        max_value = std::numeric_limits<T>::max();
-        min_value = std::numeric_limits<T>::min();
-    }
-    else {
-        max_value = 1.0;
-        min_value = 0.0;
-    }
+static inline constexpr T get_max_value() {
+    if constexpr (std::is_integral_v<T>)
+        return std::numeric_limits<T>::max();
+    else
+        return 1.0;
+}
+template <typename T>
+static inline constexpr T get_min_value() {
+    if constexpr (std::is_integral_v<T>)
+        return std::numeric_limits<T>::min();
+    else
+        return 0.0;
+}
+
+template <typename T>
+static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
+    constexpr T max_value = get_max_value<T>();
+    constexpr T min_value = get_min_value<T>();
 
     std::conditional_t<std::is_same_v<T, uint8_t>,
                        uint32_t,
@@ -63,19 +71,84 @@ static inline double letterbox_search_get_frame_ref_mean(const T * VS_RESTRICT r
         #pragma clang loop vectorize(enable) interleave(enable)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
-            sum += refp[x];
+            sum += srcp[x];
         }
     }
     else {
         #pragma clang loop vectorize(enable) interleave(enable)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
-            sum += std::clamp(refp[x], min_value, max_value);
+            sum += std::clamp(srcp[x], min_value, max_value);
         }
     }
 
-    return (double)sum / width / max_value;
+    return static_cast<double>(sum) / width / max_value;
 }
+
+template <typename T>
+static inline double calc_root_mean_square(const T * VS_RESTRICT srcp, int width) {
+    constexpr T max_value = get_max_value<T>();
+    constexpr T min_value = get_min_value<T>();
+
+    double sum = 0.0;
+    if constexpr (std::is_integral_v<T>) {
+        #pragma clang loop vectorize(enable) interleave(enable)
+        for (int x = 0; x < width; x++) {
+            const auto x_ = static_cast<double>(srcp[x]);
+            #pragma clang fp reassociate(on)
+            sum += x_ * x_;
+        }
+    }
+    else {
+        #pragma clang loop vectorize(enable) interleave(enable)
+        for (int x = 0; x < width; x++) {
+            const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
+            #pragma clang fp reassociate(on)
+            sum += x_ * x_;
+        }
+    }
+
+    return std::sqrt(sum / width) / max_value;
+}
+
+// Incremental calculation of weighted mean and variance, Tony Finch, 2009
+template <double alpha = 0.05>
+class ExponentiallyWeightedStats {
+    static_assert(alpha > 0.0 && alpha < 1.0);
+    static constexpr double one_minus_alpha     = 1 - alpha;
+    static constexpr int    half_one_over_alpha = static_cast<int>(1 / alpha * 0.5 + 0.5);
+
+    int    init  = 0;
+    double _mean;
+    double _var;
+
+public:
+    void add_data(double data) {
+        if (!init) {
+            _mean = data;
+            _var  = 0.0;
+        }
+        else {
+            const double diff =  data - _mean;
+            const double incr =  alpha * diff;
+            _mean             += incr;
+            _var              =  one_minus_alpha * (_var + diff * incr);
+        }
+        init++;
+    }
+    std::optional<double> mean() {
+        if (init < half_one_over_alpha || _var == 0.0)
+            return std::nullopt;
+        else
+            return _mean;
+    }
+    std::optional<double> stddev() {
+        if (init < half_one_over_alpha || _var == 0.0)
+            return std::nullopt;
+        else
+            return std::sqrt(_var);
+    }
+};
 
 template <typename T>
 static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationReason, void *instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
@@ -98,24 +171,8 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             return nullptr;
         }
 
-        const auto ref_thr     = d->ref_thr;
-        T          bord_thr;
-        T          cutoff_thr;
-        if constexpr (std::is_integral_v<T>) {
-            bord_thr           = static_cast<T>(std::clamp(d->bord_thr,
-                                                           static_cast<double>(std::numeric_limits<T>::min()),
-                                                           static_cast<double>(std::numeric_limits<T>::max())) + 0.5);
-            cutoff_thr         = static_cast<T>(std::clamp(d->cutoff_thr,
-                                                           static_cast<double>(std::numeric_limits<T>::min()),
-                                                           static_cast<double>(std::numeric_limits<T>::max())) + 0.5);
-        }
-        else {
-            bord_thr           = d->bord_thr;
-            cutoff_thr         = d->cutoff_thr;
-        }
-
-        const int  height = vsapi->getFrameHeight(clip, 0);
-        const int  width  = vsapi->getFrameWidth(clip, 0);
+        const int height = vsapi->getFrameHeight(clip, 0);
+        const int width  = vsapi->getFrameWidth(clip, 0);
         if (height != vsapi->getFrameHeight(ref, 0) ||
             width != vsapi->getFrameWidth(ref, 0)) {
             vsapi->freeFrame(clip);
@@ -135,23 +192,24 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         int start_y = 0;
         int end_y = height - 1;
 
-        auto srcp = ori_srcp;
-        auto refp = ori_refp;
-        auto bord_y = height;
-        auto bord   = false;
+        auto srcp   = ori_srcp;
+        auto refp   = ori_refp;
+        auto stats  = ExponentiallyWeightedStats<>();
+        int  bord_y = height;
         auto cutoff = false;
         for (; start_y < height; start_y++) {
-            bord    = false;
-            #pragma clang loop vectorize(enable) interleave(enable)
-            for (int x = 0; x < width; x++) {
-                bord   |= srcp[x] > bord_thr;
-                cutoff |= srcp[x] > cutoff_thr;
-            }
-            if (bord)
+            const auto src_mean = calc_root_mean_square<T>(srcp, width);
+
+            const auto st_mean = stats.mean();
+            const auto st_stddev = stats.stddev();
+            if (st_mean && st_stddev &&
+                src_mean > *st_mean + 3 * *st_stddev)
                 bord_y = std::min(bord_y, start_y);
             else
                 bord_y = height;
-            if (cutoff)
+            stats.add_data(src_mean);
+
+            if (cutoff = src_mean > d->thr)
                 break;
 
             srcp += src_stride;
@@ -163,28 +221,29 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             end_y = height >> 1;
         }
         else [[likely]] {
-            if (letterbox_search_get_frame_ref_mean<T>(refp, width) < ref_thr)
+            if (calc_mean<T>(refp, width) < d->ref_thr)
                 start_y = 0;
-            if (bord_y == start_y - 1)
+            if (bord_y < start_y)
                 start_y = bord_y;
 
-            srcp = ori_srcp + end_y * src_stride;
-            refp = ori_refp + end_y * ref_stride;
+            srcp   = ori_srcp + end_y * src_stride;
+            refp   = ori_refp + end_y * ref_stride;
+            stats  = ExponentiallyWeightedStats<>();
             bord_y = -1;
-            bord   = false;
             cutoff = false;
             for (; end_y >= 0; end_y--) {
-                bord = false;
-                #pragma clang loop vectorize(enable) interleave(enable)
-                for (int x = 0; x < width; x++) {
-                    bord   |= srcp[x] > bord_thr;
-                    cutoff |= srcp[x] > cutoff_thr;
-                }
-                if (bord)
+                const auto src_mean = calc_root_mean_square<T>(srcp, width);
+
+                const auto st_mean = stats.mean();
+                const auto st_stddev = stats.stddev();
+                if (st_mean && st_stddev &&
+                    src_mean > *st_mean + 3 * *st_stddev)
                     bord_y = std::max(bord_y, end_y);
                 else
                     bord_y = -1;
-                if (cutoff)
+                stats.add_data(src_mean);
+
+                if (cutoff = src_mean > d->thr)
                     break;
 
                 srcp -= src_stride;
@@ -198,15 +257,15 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
                 return nullptr;
             }
             else [[likely]] {
-                if (letterbox_search_get_frame_ref_mean<T>(refp, width) < ref_thr)
+                if (calc_mean<T>(refp, width) < d->ref_thr)
                     end_y = height - 1;
-                if (bord_y == end_y + 1)
+                if (bord_y > end_y)
                     end_y = bord_y;
             }
         }
 
-        const auto start_y_prop = "_VSLETTERBOX_TOP_ROW";
-        const auto end_y_prop = "_VSLETTERBOX_BOTTOM_ROW";
+        const auto start_y_prop = "VSLETTERBOX_TOP_ROW";
+        const auto end_y_prop   = "VSLETTERBOX_BOTTOM_ROW";
         vsapi->mapSetInt(props, start_y_prop, start_y, maReplace);
         vsapi->mapSetInt(props, end_y_prop, end_y, maReplace);
             
@@ -244,9 +303,8 @@ static void VS_CC letterbox_search_create(const VSMap *in, VSMap *out, void *use
         return;
     }
 
-    d->ref_thr    = vsapi->mapGetFloat(in, "ref_thr", 0, nullptr);
-    d->bord_thr   = vsapi->mapGetFloat(in, "bord_thr", 0, nullptr);
-    d->cutoff_thr = vsapi->mapGetFloat(in, "cutoff_thr", 0, nullptr);
+    d->thr     = vsapi->mapGetFloat(in, "thr", 0, nullptr);
+    d->ref_thr = vsapi->mapGetFloat(in, "ref_thr", 0, nullptr);
     
     VSFilterDependency deps[] = {{d->clip, rpStrictSpatial}, {d->ref, rpStrictSpatial}};
     int num_deps = 2;
@@ -270,8 +328,7 @@ static void VS_CC letterbox_search_create(const VSMap *in, VSMap *out, void *use
 VS_EXTERNAL_API(void) VapourSynthPluginInit2(VSPlugin *plugin, const VSPLUGINAPI *vspapi) {
     vspapi->configPlugin("aka.letterbox", "letterbox", "Letterbox Detection and Masking", VS_MAKE_VERSION(1, 0), VAPOURSYNTH_API_VERSION, 0, plugin);
     vspapi->registerFunction("Find", "clip:vnode;"
+                                     "thr:float;"
                                      "ref:vnode;"
-                                     "ref_thr:float;"
-                                     "bord_thr:float;"
-                                     "cutoff_thr:float;", "clip:vnode;", letterbox_search_create, NULL, plugin);
+                                     "ref_thr:float;", "clip:vnode;", letterbox_search_create, NULL, plugin);
 }
