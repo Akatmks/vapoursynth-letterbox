@@ -94,16 +94,16 @@ static inline double calc_root_mean_square(const T * VS_RESTRICT srcp, int width
     if constexpr (std::is_integral_v<T>) {
         #pragma clang loop vectorize(enable) interleave(enable)
         for (int x = 0; x < width; x++) {
-            const auto x_ = static_cast<double>(srcp[x]);
             #pragma clang fp reassociate(on)
+            const auto x_ = static_cast<double>(srcp[x]);
             sum += x_ * x_;
         }
     }
     else {
         #pragma clang loop vectorize(enable) interleave(enable)
         for (int x = 0; x < width; x++) {
-            const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
             #pragma clang fp reassociate(on)
+            const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
             sum += x_ * x_;
         }
     }
@@ -209,7 +209,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
                 bord_y = height;
             stats.add_data(src_mean);
 
-            if (cutoff = src_mean > d->thr)
+            if ((cutoff = src_mean > d->thr))
                 break;
 
             srcp += src_stride;
@@ -243,7 +243,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
                     bord_y = -1;
                 stats.add_data(src_mean);
 
-                if (cutoff = src_mean > d->thr)
+                if ((cutoff = src_mean > d->thr))
                     break;
 
                 srcp -= src_stride;
