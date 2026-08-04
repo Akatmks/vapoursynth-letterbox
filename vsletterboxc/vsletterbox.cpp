@@ -198,7 +198,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         int  bord_y = height;
         auto cutoff = false;
         for (; start_y < height; start_y++) {
-            const auto src_mean = mean<T>(srcp, width);
+            const auto src_mean = calc_mean<T>(srcp, width);
 
             const auto st_mean = stats.mean();
             const auto st_stddev = stats.stddev();
@@ -232,7 +232,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             bord_y = -1;
             cutoff = false;
             for (; end_y >= 0; end_y--) {
-                const auto src_mean = mean<T>(srcp, width);
+                const auto src_mean = calc_mean<T>(srcp, width);
 
                 const auto st_mean = stats.mean();
                 const auto st_stddev = stats.stddev();
