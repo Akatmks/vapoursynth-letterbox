@@ -116,17 +116,17 @@ template <double alpha = 0.05>
 class ExponentiallyWeightedStats {
     static_assert(alpha > 0.0 && alpha < 1.0);
     static constexpr double one_minus_alpha     = 1 - alpha;
-    static constexpr int    half_one_over_alpha = static_cast<int>(1 / alpha * 0.5 + 0.5);
 
-    int    init  = 0;
+    bool   init = false;
     double _mean;
     double _var;
 
 public:
     void add_data(double data) {
         if (!init) {
+            init  = true;
             _mean = data;
-            _var  = 0.0;
+            _var  = 0.005 * 0.005;
         }
         else {
             const double diff =  data - _mean;
@@ -134,16 +134,15 @@ public:
             _mean             += incr;
             _var              =  one_minus_alpha * (_var + diff * incr);
         }
-        init++;
     }
     std::optional<double> mean() {
-        if (init < half_one_over_alpha || _var == 0.0)
+        if (!init)
             return std::nullopt;
         else
             return _mean;
     }
     std::optional<double> stddev() {
-        if (init < half_one_over_alpha || _var == 0.0)
+        if (!init)
             return std::nullopt;
         else
             return std::sqrt(_var);
@@ -203,7 +202,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             const auto st_mean = stats.mean();
             const auto st_stddev = stats.stddev();
             if (st_mean && st_stddev &&
-                src_mean > *st_mean + 5 * *st_stddev)
+                src_mean > *st_mean + 3 * *st_stddev)
                 bord_y = std::min(bord_y, start_y);
             else
                 bord_y = height;
