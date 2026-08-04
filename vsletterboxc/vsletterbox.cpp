@@ -115,7 +115,7 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 template <double alpha = 0.05>
 class ExponentiallyWeightedStats {
     static_assert(alpha > 0.0 && alpha < 1.0);
-    static constexpr double one_minus_alpha     = 1 - alpha;
+    static constexpr double one_minus_alpha = 1 - alpha;
 
     bool   init = false;
     double _mean;
@@ -126,7 +126,7 @@ public:
         if (!init) {
             init  = true;
             _mean = data;
-            _var  = 0.005 * 0.005;
+            _var  = 0.0;
         }
         else {
             const double diff =  data - _mean;
@@ -202,7 +202,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             const auto st_mean = stats.mean();
             const auto st_stddev = stats.stddev();
             if (st_mean && st_stddev &&
-                src_mean > *st_mean + 3 * *st_stddev)
+                src_mean > *st_mean + 3 * std:max(*st_stddev, 0.005))
                 bord_y = std::min(bord_y, start_y);
             else
                 bord_y = height;
@@ -224,6 +224,8 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
                 start_y = 0;
             if (bord_y < start_y)
                 start_y = bord_y;
+            if (start_y == 1)
+                start_y = 0;
 
             srcp   = ori_srcp + end_y * src_stride;
             refp   = ori_refp + end_y * ref_stride;
@@ -236,7 +238,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
                 const auto st_mean = stats.mean();
                 const auto st_stddev = stats.stddev();
                 if (st_mean && st_stddev &&
-                    src_mean > *st_mean + 3 * *st_stddev)
+                    src_mean > *st_mean + 3 * std:max(*st_stddev, 0.005))
                     bord_y = std::max(bord_y, end_y);
                 else
                     bord_y = -1;
@@ -260,6 +262,8 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
                     end_y = height - 1;
                 if (bord_y > end_y)
                     end_y = bord_y;
+                if (end_y == height - 2)
+                    end_y = height - 1;
             }
         }
 
