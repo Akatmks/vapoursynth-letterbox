@@ -216,16 +216,14 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         }
 
         if (!cutoff) {
-            start_y = (height >> 1) + 1;
-            end_y = height >> 1;
+            start_y = 0;
+            end_y = height - 1;
         }
         else [[likely]] {
             if (calc_mean<T>(refp, width) < d->ref_thr)
                 start_y = 0;
             if (bord_y < start_y)
                 start_y = bord_y;
-            if (start_y == 1)
-                start_y = 0;
 
             srcp   = ori_srcp + end_y * src_stride;
             refp   = ori_refp + end_y * ref_stride;
@@ -262,8 +260,6 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
                     end_y = height - 1;
                 if (bord_y > end_y)
                     end_y = bord_y;
-                if (end_y == height - 2)
-                    end_y = height - 1;
             }
         }
 
