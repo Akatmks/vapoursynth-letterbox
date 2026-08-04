@@ -4,9 +4,9 @@ A VapourSynth plugin to find and clean letterbox.
 
 ### Usage
 
-You should use the Python wrapper to use this plugin. The Python wrapper has some very important pre and postprocessing. Only with these protection is this letterbox masking safe to use.  
+You should use functions in the Python package to use this plugin. These functions perform some very important pre and postprocessing. Only with these protection is this letterbox masking safe to use.  
 
-The Python wrapper depends on vs-jetpack. If you can't use vs-jetpack, it's highly suggested to copy [the code](vsletterbox.py) in the wrapper out and implement it into your environment.  
+The functions in the Python package depends on vs-jetpack. If you can't use vs-jetpack, it's highly suggested to copy [the code](vsletterbox.py) out and implement it into your environment.  
 
 For video with no permanent letterbox:  
 ```py
@@ -23,10 +23,10 @@ clip = clean_letterbox(clip, permanent=[129, 129]) # [Top, Bottom]
 In addition to cleaning the noise, we can also perform border deringing based on the dynamic letterbox detected.  
 This feature requires [bore](https://github.com/OpusGang/bore).  
 ```py
-clip = clean_letterbox(clip, permanent=[129, 129], bore_ythickness=[4, 4], bore_uthickness=[2, 2], bore_vthickness=[2, 2])
+clip = clean_letterbox(clip, permanent=[129, 129], bore_y=[4, 4], bore_u=[2, 2], bore_v=[2, 2])
 ```
 
-Alternatively, we also provide `letterbox_mask` function where you can apply your own cleaning.  
+Alternatively, we also provide `letterbox_mask` function with which you can apply your own operations.  
 
 ```py
 from vsletterbox import letterbox_mask
@@ -55,18 +55,17 @@ We detect letterbox based on three details:
 Once letterbox border is identified:  
 
 6. Any pixel of the letterbox whose brightness is below a set threshold is cleaned to pure black.  
-  This threshold is to protect cases where there are intential items in the border such as the opening of 173295 / 57810.  
+  This threshold is to protect cases where there are intentional items in the border such as the opening of 173295 / 57810.  
   ⠀  
-  This is protected by a `Morpho.closing()` to clean the few extreme pixels and a `Morpho.minimum()` to make the cleaning stay further away from intential items.  
+  This is protected by a `Morpho.closing()` to clean the few extreme pixels and a `Morpho.minimum()` to make the cleaning stay further away from intentional items.  
 
 7. We don't want to eliminate the noise in a pure black screen for multiple reasons.  
-  ⠀  
-  First, the video is still going and it shouldn't just be completely blank and static.  
+  First, the video is still going and it shouldn't just be completely blank.  
   Second, there are situations such as fading. When the image is fading to black, there is noise during the fading. But when the fading ends, the letterbox detection triggers, and suddenly all the noise goes away within the time of a single frame. That'll be really odd.  
   ⠀  
   Instead a protection is applied and the letterbox cleaning strength is reduced as the area of the letterbox increases until it reaches a full black screen where no cleaning is applied.  
   ⠀  
-  As an exception, the clearning will always apply in the user provided permanent letterbox in a pure black screen.  
+  As an exception, the cleaning will still apply to the user provided permanent letterbox in a pure black screen.  
 
 8. `bore` will be applied to the image within the letterbox with the specified thickness.  
 
