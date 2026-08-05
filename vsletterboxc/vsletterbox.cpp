@@ -134,7 +134,7 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
         }
     }
 
-    return std::pow(sum / width, 1) / max_value;
+    return std::pow(sum / width, 2/3) / max_value;
 }
 
 // Incremental calculation of weighted mean and variance, Tony Finch, 2009
