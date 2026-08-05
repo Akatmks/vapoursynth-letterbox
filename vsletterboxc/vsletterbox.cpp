@@ -112,7 +112,8 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 // }
 
 template <typename T>
-static double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
+static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
+    #pragma clang fp reciprocal(on)
     constexpr T max_value = get_max_value<T>();
     constexpr T min_value = get_min_value<T>();
 
