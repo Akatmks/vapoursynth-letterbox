@@ -21,9 +21,14 @@ clip = clean_letterbox(clip, permanent=[129, 129]) # [Top, Bottom]
 ```
 
 In addition to cleaning the noise, we can also perform border deringing based on the dynamic letterbox detected.  
-This feature requires [bore](https://github.com/OpusGang/bore).  
 ```py
-clip = clean_letterbox(clip, permanent=[129, 129], bore_y=[4, 4], bore_u=[2, 2], bore_v=[2, 2])
+clip = clean_letterbox(
+    clip,
+    permanent=[129, 129],
+    border_y=lambda clip: clip.bore.SinglePlane(top=4, bottom=4),
+    border_u=lambda clip: clip.bore.SinglePlane(top=2, bottom=2),
+    border_v=lambda clip: clip.bore.SinglePlane(top=2, bottom=2)
+)
 ```
 
 Alternatively, we also provide `letterbox_mask` function with which you can apply your own operations.  
@@ -57,7 +62,8 @@ Once letterbox border is identified:
 6. Any pixel of the letterbox whose brightness is below a set threshold is cleaned to pure black.  
   This threshold is to protect cases where there are intentional items in the border such as the opening of 173295 / 57810.  
   ⠀  
-  This is protected by a `Morpho.closing()` to clean the few extreme pixels and a `Morpho.minimum()` to make the cleaning stay further away from intentional items.  
+  This is protected by a `Morpho.closing()` to clean outlier noise pixels and a `Morpho.minimum()` to make the cleaning stay further away from intentional items.  
+  If the source contains very heavy noise, the threshold for this needs to be increased.  
 
 7. We don't want to eliminate the noise in a pure black screen for multiple reasons.  
   First, the video is still going and it shouldn't just be completely blank.  
@@ -67,7 +73,7 @@ Once letterbox border is identified:
   ⠀  
   As an exception, the cleaning will still apply to the user provided permanent letterbox in a pure black screen.  
 
-8. `bore` will be applied to the image within the letterbox with the specified thickness.  
+8. `border_y`, `border_u`, `border_v` will be applied to the image clip with letterbox cropped away.  
 
 ### Reference
 
@@ -99,9 +105,14 @@ clean_letterbox(
     fullblack_thr:   float     = 1/3,
 
     # Method 8.
-    bore_y:          list[int] = [0, 0], # [Top, Bottom]
-    bore_u:          list[int] = [0, 0], # [Top, Bottom]
-    bore_v:          list[int] = [0, 0], # [Top, Bottom]
+    # Example function:
+    # lambda clip: clip.bore.SinglePlane(top=2, bottom=2)
+    border_y:        Callable[[vs.VideoNode], vs.VideoNode] | None
+                               = None,
+    border_u:        Callable[[vs.VideoNode], vs.VideoNode] | None
+                               = None,
+    border_v:        Callable[[vs.VideoNode], vs.VideoNode] | None
+                               = None,
 )
 ```
 ```py
