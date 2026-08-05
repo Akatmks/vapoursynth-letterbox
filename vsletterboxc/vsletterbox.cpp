@@ -129,7 +129,6 @@ static inline double calc_power_mean(const T * VS_RESTRICT srcp, int width) {
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             sum += std::pow(static_cast<double>(std::clamp(srcp[x], min_value, max_value)), power);
-            sum += x_ * x_;
         }
     }
 
