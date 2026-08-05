@@ -32,7 +32,7 @@ from vstools import ChromaLocation, get_y, join, split, vs
 def find_letterbox(
         clip,
         permanent=[0, 0],
-        dynamic_thr=0.2,
+        dynamic_thr=0.15,
         dynamic_ref=ExKirsch().edgemask,
         dynamic_ref_thr=1/2
     ):
@@ -55,7 +55,7 @@ def find_letterbox(
 def letterbox_mask(
         clip,
         permanent=[0, 0],
-        dynamic_thr=0.2,
+        dynamic_thr=0.15,
         dynamic_ref=ExKirsch().edgemask,
         dynamic_ref_thr=1/2,
         fullblack_thr=1/3
@@ -89,7 +89,7 @@ def clean_letterbox(
         thr=0.075,
         permanent=[0, 0],
         dynamic=True,
-        dynamic_thr=0.2,
+        dynamic_thr=0.15,
         dynamic_ref=ExKirsch().edgemask,
         dynamic_ref_thr=1/2,
         fullblack_thr=1/3,
