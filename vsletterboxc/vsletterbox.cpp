@@ -118,7 +118,7 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
 
     double sum = 0.0;
     if constexpr (std::is_integral_v<T>) {
-        #pragma clang loop vectorize(fast) interleave(enable)
+        #pragma clang loop vectorize(enable) interleave(enable)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             const auto x_ = static_cast<double>(srcp[x]);
@@ -126,7 +126,7 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
         }
     }
     else {
-        #pragma clang loop vectorize(fast) interleave(enable)
+        #pragma clang loop vectorize(enable) interleave(enable)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
@@ -134,7 +134,7 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
         }
     }
 
-    return std::pow(sum / width, 2.0 / 3) / max_value;
+    return std::pow(sum / width, 0.66666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666) / max_value;
 }
 
 // Incremental calculation of weighted mean and variance, Tony Finch, 2009
