@@ -92,7 +92,7 @@ clean_letterbox(
     dynamic:         bool      = True,
     # Method 3.
     # Default to around 25 at 8-bit
-    dynamic_thr:     float     = 0.1,
+    dynamic_thr:     float     = 0.2,
     # Method 2.
     dynamic_ref:     Callable[[vs.VideoNode], vs.VideoNode]
                                = ExKirsch().edgemask,
@@ -125,7 +125,8 @@ letterbox_mask(
     permanent:       list[int] = [0, 0], # [Top, Bottom]
 
     # Method 3.
-    dynamic_thr:     float     = 0.1,
+    # Default to around 25 at 8-bit
+    dynamic_thr:     float     = 0.2,
     # Method 2.
     dynamic_ref:     Callable[[vs.VideoNode], vs.VideoNode]
                                = ExKirsch().edgemask,
@@ -150,7 +151,8 @@ find_letterbox(
     permanent:       list[int] = [0, 0], # [Top, Bottom]
 
     # Method 3.
-    dynamic_thr:     float     = 0.1,
+    # Default to around 25 at 8-bit
+    dynamic_thr:     float     = 0.2,
     # Method 2.
     dynamic_ref:     Callable[[vs.VideoNode], vs.VideoNode]
                                = ExKirsch().edgemask,
