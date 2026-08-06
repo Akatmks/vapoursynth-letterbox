@@ -33,7 +33,7 @@ def find_letterbox(
         clip,
         permanent=[0, 0],
         dynamic_ref=ExKirsch().edgemask,
-        dynamic_ref_thr=1/2
+        dynamic_ref_thr=2/3
     ):
     assert permanent[0] >= 0
     assert permanent[1] >= 0
@@ -44,7 +44,7 @@ def find_letterbox(
 
     assert clip.format.num_planes in [1, 3]
     if clip.format.num_planes == 3:
-        pre = Bilinear().scale(clip, format=source.format.replace(subsampling_w=0, subsampling_h=0), range=ColorRange.FULL)
+        pre = Bilinear().scale(clip, format=clip.format.replace(subsampling_w=0, subsampling_h=0), range=ColorRange.FULL)
         pre = norm_expr(split(pre), "x y neutral - abs 0.5 * z neutral - abs 0.5 * + + 0 max mask_max min")
     else:
         pre = norm_expr(clip, "x 0 max mask_max min")
@@ -61,8 +61,8 @@ def letterbox_mask(
         clip,
         permanent=[0, 0],
         dynamic_ref=ExKirsch().edgemask,
-        dynamic_ref_thr=1/2,
-        fullblack_thr=1/4
+        dynamic_ref_thr=2/3,
+        fullblack_thr=1/5
     ):
     assert permanent[0] >= 0
     assert permanent[1] >= 0
@@ -92,8 +92,8 @@ def clean_letterbox(
         permanent=[0, 0],
         dynamic=True,
         dynamic_ref=ExKirsch().edgemask,
-        dynamic_ref_thr=1/2,
-        fullblack_thr=1/4,
+        dynamic_ref_thr=2/3,
+        fullblack_thr=1/5,
         border_y=None,
         border_u=None,
         border_v=None

@@ -97,12 +97,12 @@ clean_letterbox(
     dynamic_ref:     Callable[[vs.VideoNode], vs.VideoNode]
                                = ExKirsch().edgemask,
     # Method 2.
-    dynamic_ref_thr: float     = 1/2,
+    dynamic_ref_thr: float     = 2/3,
 
     # Method 7.
     # The cleaning strength starts reducing when the area of the image is smaller than this
     # threshold.
-    fullblack_thr:   float     = 1/4,
+    fullblack_thr:   float     = 1/6,
 
     # Method 8.
     # Example function:
@@ -131,12 +131,12 @@ letterbox_mask(
     dynamic_ref:     Callable[[vs.VideoNode], vs.VideoNode]
                                = ExKirsch().edgemask,
     # Method 2.
-    dynamic_ref_thr: float     = 1/2,
+    dynamic_ref_thr: float     = 2/3,
 
     # Method 7.
     # The cleaning strength starts reducing when the area of the image is smaller than this
     # threshold.
-    fullblack_thr:   float     = 1/4,
+    fullblack_thr:   float     = 1/6,
 )
 ```
 ```py
@@ -157,6 +157,6 @@ find_letterbox(
     dynamic_ref:     Callable[[vs.VideoNode], vs.VideoNode]
                                = ExKirsch().edgemask,
     # Method 2.
-    dynamic_ref_thr: float     = 1/2,
+    dynamic_ref_thr: float     = 2/3,
 )
 ```
