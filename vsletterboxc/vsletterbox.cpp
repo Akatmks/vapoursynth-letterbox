@@ -68,14 +68,14 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
                                           double>>
         sum = 0;
     if constexpr (std::is_integral_v<T>) {
-        #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
+        #pragma clang loop vectorize(assume_safety) interleave(enable)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             sum += srcp[x];
         }
     }
     else {
-        #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
+        #pragma clang loop vectorize(assume_safety) interleave(enable)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             sum += std::clamp(srcp[x], min_value, max_value);
@@ -92,7 +92,7 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 
 //     double sum = 0.0;
 //     if constexpr (std::is_integral_v<T>) {
-//         #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
+//         #pragma clang loop vectorize(assume_safety) interleave(enable)
 //         for (int x = 0; x < width; x++) {
 //             #pragma clang fp reassociate(on)
 //             const auto x_ = static_cast<double>(srcp[x]);
@@ -100,7 +100,7 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 //         }
 //     }
 //     else {
-//         #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
+//         #pragma clang loop vectorize(assume_safety) interleave(enable)
 //         for (int x = 0; x < width; x++) {
 //             #pragma clang fp reassociate(on)
 //             const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
@@ -118,7 +118,7 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
 
     double sum = 0.0;
     if constexpr (std::is_integral_v<T>) {
-        #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
+        #pragma clang loop vectorize(assume_safety) interleave(enable)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             const auto x_ = static_cast<double>(srcp[x]);
@@ -126,7 +126,7 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
         }
     }
     else {
-        #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
+        #pragma clang loop vectorize(assume_safety) interleave(enable)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
