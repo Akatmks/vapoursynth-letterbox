@@ -106,7 +106,11 @@ def clean_letterbox(
     assert dynamic_ref_thr >= 0.0 and dynamic_ref_thr <= 1.0
     assert fullblack_thr >= 0.0 and fullblack_thr <= 1.0
 
-    letterbox = find_letterbox(clip, permanent, dynamic_ref, dynamic_ref_thr)
+    if dynamic:
+        letterbox = find_letterbox(clip, permanent, dynamic_ref, dynamic_ref_thr)
+    else:
+        letterbox = get_y(clip)
+        letterbox = letterbox.std.SetFrameProps(VSLETTERBOX_TOP_ROW=permanent_top_row, VSLETTERBOX_BOTTOM_ROW=permanent_bottom_row)
     letterbox = letterbox.akarin.PropExpr(lambda: dict(_VSLETTERBOX_AREA_MULTIPLIER=f"""
 x.VSLETTERBOX_BOTTOM_ROW 1 + x.VSLETTERBOX_TOP_ROW - {permanent_bottom_row} 1 + {permanent_top_row} - /
 {fullblack_thr} /
