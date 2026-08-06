@@ -61,7 +61,7 @@ def letterbox_mask(
         dynamic_thr=0.1,
         dynamic_ref=ExKirsch().edgemask,
         dynamic_ref_thr=1/2,
-        fullblack_thr=1/3
+        fullblack_thr=1/4
     ):
     assert permanent[0] >= 0
     assert permanent[1] >= 0
@@ -95,7 +95,7 @@ def clean_letterbox(
         dynamic_thr=0.1,
         dynamic_ref=ExKirsch().edgemask,
         dynamic_ref_thr=1/2,
-        fullblack_thr=1/3,
+        fullblack_thr=1/4,
         border_y=None,
         border_u=None,
         border_v=None

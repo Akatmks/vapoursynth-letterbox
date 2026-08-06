@@ -102,7 +102,7 @@ clean_letterbox(
     # Method 7.
     # The cleaning strength starts reducing when the area of the image is smaller than this
     # threshold.
-    fullblack_thr:   float     = 1/3,
+    fullblack_thr:   float     = 1/4,
 
     # Method 8.
     # Example function:
@@ -136,7 +136,7 @@ letterbox_mask(
     # Method 7.
     # The cleaning strength starts reducing when the area of the image is smaller than this
     # threshold.
-    fullblack_thr:   float     = 1/3,
+    fullblack_thr:   float     = 1/4,
 )
 ```
 ```py
