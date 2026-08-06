@@ -111,7 +111,7 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 //     return std::sqrt(sum / width) / max_value;
 // }
 
-template <typname T>
+template <typename T>
 static double calc_15_power_mean_helper(const T * VS_RESTRICT srcp, int width) {
     constexpr T max_value = get_max_value<T>();
     constexpr T min_value = get_min_value<T>();
