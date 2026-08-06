@@ -32,7 +32,7 @@ from vstools import ChromaLocation, get_y, join, split, vs
 def find_letterbox(
         clip,
         permanent=[0, 0],
-        dynamic_thr=0.15,
+        dynamic_thr=0.1,
         dynamic_ref=ExKirsch().edgemask,
         dynamic_ref_thr=1/2
     ):
@@ -45,7 +45,10 @@ def find_letterbox(
     assert dynamic_ref_thr >= 0.0 and dynamic_ref_thr <= 1.0
 
     mask = dynamic_ref(clip)
-    letterbox = clip.letterbox.Find(thr=dynamic_thr, ref=mask, ref_thr=dynamic_ref_thr)
+    prop = norm_expr(get_y(clip), f"x mask_max {dynamic_thr} * < 0 x ?")
+    prop = prop.vszip.PlaneAverage(exclude=0, prop="Luma")
+    letterbox = core.akarin.PropExpr([clip, prop], lambda: dict(_VSLETTERBOX_THR=f"y.LumaAvg 0.25 * {dynamic_thr} max"))
+    letterbox = letterbox.letterbox.Find(ref=mask, ref_thr=dynamic_ref_thr)
     letterbox = letterbox.akarin.PropExpr(lambda: dict(
         VSLETTERBOX_TOP_ROW=f"x.VSLETTERBOX_TOP_ROW {permanent_top_row} 2 + <= {permanent_top_row} x.VSLETTERBOX_TOP_ROW ?",
         VSLETTERBOX_BOTTOM_ROW=f"x.VSLETTERBOX_BOTTOM_ROW {permanent_bottom_row} 2 - >= {permanent_bottom_row} x.VSLETTERBOX_BOTTOM_ROW ?"
@@ -55,7 +58,7 @@ def find_letterbox(
 def letterbox_mask(
         clip,
         permanent=[0, 0],
-        dynamic_thr=0.15,
+        dynamic_thr=0.1,
         dynamic_ref=ExKirsch().edgemask,
         dynamic_ref_thr=1/2,
         fullblack_thr=1/3
@@ -89,7 +92,7 @@ def clean_letterbox(
         thr=0.075,
         permanent=[0, 0],
         dynamic=True,
-        dynamic_thr=0.15,
+        dynamic_thr=0.1,
         dynamic_ref=ExKirsch().edgemask,
         dynamic_ref_thr=1/2,
         fullblack_thr=1/3,

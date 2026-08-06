@@ -48,7 +48,7 @@ We detect letterbox based on three details:
 2. We apply a sensitive general edgemask to the image, and this row must have high edgemask coverage.  
   This is to prevent cases such as title screens with only white text on black background to be detected as letterbox.  
 
-3. We apply a hard brightness requirement where the next few image rows inside the border row must have.  
+3. We apply a brightness requirement where the next few image rows inside the border row must have. This brightness requirement is calculated dynamically based on the overall brightness of the frame.  
   This is to combat the case of intentional light bleeding (not talking about border ringing from scaling) in some special cases to be recognised as letterbox.  
 
 4. If the detected row is within 2 rows from the user provided `permanent` row, we snap the detected row to the `permanent` row.  
@@ -90,9 +90,9 @@ clean_letterbox(
 
     # Enables the detection, without which only method 6. and 8. will apply  
     dynamic:         bool      = True,
-    # Method 3.
-    # Default to around 38 at 8-bit
-    dynamic_thr:     float     = 0.15,
+    # In the calculation for method 3., pixels with brightness below this threshold are excluded
+    # Default to around 25 at 8-bit
+    dynamic_thr:     float     = 0.1,
     # Method 2.
     dynamic_ref:     Callable[[vs.VideoNode], vs.VideoNode]
                                = ExKirsch().edgemask,
@@ -124,9 +124,9 @@ letterbox_mask(
     # Permanent letterbox used in method 4. and 5., as well as in method 7.
     permanent:       list[int] = [0, 0], # [Top, Bottom]
 
-    # Method 3.
-    # Default to around 38 at 8-bit
-    dynamic_thr:     float     = 0.15,
+    # In the calculation for method 3., pixels with brightness below this threshold are excluded
+    # Default to around 25 at 8-bit
+    dynamic_thr:     float     = 0.1,
     # Method 2.
     dynamic_ref:     Callable[[vs.VideoNode], vs.VideoNode]
                                = ExKirsch().edgemask,
@@ -150,9 +150,9 @@ find_letterbox(
     # Permanent letterbox used in method 4. and 5., as well as in method 7.
     permanent:       list[int] = [0, 0], # [Top, Bottom]
 
-    # Method 3.
-    # Default to around 38 at 8-bit
-    dynamic_thr:     float     = 0.15,
+    # In the calculation for method 3., pixels with brightness below this threshold are excluded
+    # Default to around 25 at 8-bit
+    dynamic_thr:     float     = 0.1,
     # Method 2.
     dynamic_ref:     Callable[[vs.VideoNode], vs.VideoNode]
                                = ExKirsch().edgemask,
