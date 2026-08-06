@@ -208,7 +208,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
 
         auto dst   = vsapi->copyFrame(clip, core);
         auto props = vsapi->getFramePropertiesRW(dst);
-        auto thr   = props->mapGetFloat(props, "_VSLETTERBOX_THR", 0, nullptr);
+        auto thr   = vsapi->mapGetFloat(props, "_VSLETTERBOX_THR", 0, nullptr);
         if (!(thr >= 0.0 && thr <= 1.0)) {
             vsapi->freeFrame(clip);
             vsapi->freeFrame(ref);
