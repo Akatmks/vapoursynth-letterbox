@@ -45,9 +45,9 @@ def find_letterbox(
     assert clip.format.num_planes in [1, 3]
     if clip.format.num_planes == 3:
         pre = Bilinear().scale(clip, format=source.format.replace(subsampling_w=0, subsampling_h=0), range=ColorRange.FULL)
-        pre = norm_expr(split(pre), "x y neutral - abs 0.5 * z neutral - abs 0.5 * + + mask_min max mask_max min")
+        pre = norm_expr(split(pre), "x y neutral - abs 0.5 * z neutral - abs 0.5 * + + 0 max mask_max min")
     else:
-        pre = norm_expr(clip, "x mask_min max mask_max min")
+        pre = norm_expr(clip, "x 0 max mask_max min")
 
     mask = dynamic_ref(pre)
     letterbox = pre.letterbox.Find(ref=mask, ref_thr=dynamic_ref_thr)
