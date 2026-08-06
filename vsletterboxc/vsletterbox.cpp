@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
+#include <utility>
 #include <VapourSynth4.h>
 #include <VSHelper4.h>
 
