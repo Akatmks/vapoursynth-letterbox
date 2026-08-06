@@ -111,9 +111,8 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 //     return std::sqrt(sum / width) / max_value;
 // }
 
-template <typename T>
-static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
-    #pragma clang fp reciprocal(on)
+template <typname T>
+static double calc_15_power_mean_helper(const T * VS_RESTRICT srcp, int width) {
     constexpr T max_value = get_max_value<T>();
     constexpr T min_value = get_min_value<T>();
 
@@ -135,7 +134,11 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
         }
     }
 
-    return std::pow(sum / width, 2.0 / 3) / max_value;
+    return sum;
+}
+template <typename T>
+static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
+    [[clang::noinline]] return std::pow(calc_15_power_mean_helper<T>(srcp, width) / width, 2.0 / 3) / max_value;
 }
 
 // Incremental calculation of weighted mean and variance, Tony Finch, 2009
