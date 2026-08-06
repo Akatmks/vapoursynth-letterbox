@@ -68,14 +68,14 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
                                           double>>
         sum = 0;
     if constexpr (std::is_integral_v<T>) {
-        #pragma clang loop vectorize(enable) interleave(enable)
+        #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             sum += srcp[x];
         }
     }
     else {
-        #pragma clang loop vectorize(enable) interleave(enable)
+        #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             sum += std::clamp(srcp[x], min_value, max_value);
@@ -92,7 +92,7 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 
 //     double sum = 0.0;
 //     if constexpr (std::is_integral_v<T>) {
-//         #pragma clang loop vectorize(enable) interleave(enable)
+//         #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
 //         for (int x = 0; x < width; x++) {
 //             #pragma clang fp reassociate(on)
 //             const auto x_ = static_cast<double>(srcp[x]);
@@ -100,7 +100,7 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 //         }
 //     }
 //     else {
-//         #pragma clang loop vectorize(enable) interleave(enable)
+//         #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
 //         for (int x = 0; x < width; x++) {
 //             #pragma clang fp reassociate(on)
 //             const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
@@ -112,35 +112,29 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 // }
 
 template <typename T>
-static double calc_15_power_mean_helper(const T * VS_RESTRICT srcp, int width) {
+static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
     constexpr T max_value = get_max_value<T>();
     constexpr T min_value = get_min_value<T>();
 
     double sum = 0.0;
     if constexpr (std::is_integral_v<T>) {
-        #pragma clang loop vectorize(enable) interleave(enable)
+        #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             const auto x_ = static_cast<double>(srcp[x]);
-            sum += x_ * std::sqrt(x_);
+            sum += x_ * __builtin_sqrt(x_);
         }
     }
     else {
-        #pragma clang loop vectorize(enable) interleave(enable)
+        #pragma clang loop vectorize(enable) interleave(enable) vectorize(assume_safety)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
-            sum += x_ * std::sqrt(x_);
+            sum += x_ * __builtin_sqrt(x_);
         }
     }
 
-    return sum;
-}
-template <typename T>
-static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
-    constexpr T max_value = get_max_value<T>();
-
-    [[clang::noinline]] return std::pow(calc_15_power_mean_helper<T>(srcp, width) / width, 2.0 / 3) / max_value;
+    return std::pow(sum / width, 2.0 / 3) / max_value;
 }
 
 // Incremental calculation of weighted mean and variance, Tony Finch, 2009
