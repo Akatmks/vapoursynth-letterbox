@@ -1,6 +1,6 @@
 project('vsletterbox', 'c', 'cpp',
   version: '1.0.0',
-  default_options: ['c_std=c99', 'cpp_std=c++20', 'buildtype=release', 'b_ndebug=if-release', 'b_lto=true']
+  default_options: ['c_std=c99', 'cpp_std=c++23', 'buildtype=release', 'b_ndebug=if-release', 'b_lto=true']
 )
 
 sources = [
