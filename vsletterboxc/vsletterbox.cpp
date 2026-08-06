@@ -208,14 +208,6 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
 
         auto dst   = vsapi->copyFrame(clip, core);
         auto props = vsapi->getFramePropertiesRW(dst);
-        auto thr   = vsapi->mapGetFloat(props, "_VSLETTERBOX_THR", 0, nullptr);
-        if (!(thr >= 0.0 && thr <= 1.0)) {
-            vsapi->freeFrame(clip);
-            vsapi->freeFrame(ref);
-            vsapi->freeFrame(dst);
-            vsapi->setFilterError("vsletterbox: _VSLETTERBOX_THR must be between 0.0 and 1.0", frameCtx);
-            return nullptr;
-        }
 
         const T * VS_RESTRICT ori_srcp   = reinterpret_cast<const T *>(vsapi->getReadPtr(clip, 0));
         const auto            src_stride = vsapi->getStride(clip, 0) / sizeof(T);
@@ -228,74 +220,54 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         auto srcp   = ori_srcp;
         auto refp   = ori_refp;
         auto stats  = ExponentiallyWeightedStats<>();
-        int  bord_y = height;
-        auto cutoff = false;
+        auto detect = false;
         for (; start_y < height; start_y++) {
             const auto src_mean = calc_mean<T>(srcp, width);
 
             const auto st_mean = stats.mean();
             const auto st_stddev = stats.stddev();
             if (st_mean && st_stddev &&
-                src_mean > *st_mean + 3 * std::max(*st_stddev, 0.0075))
-                bord_y = std::min(bord_y, start_y);
-            else
-                bord_y = height;
+                src_mean > *st_mean + 3 * std::max(*st_stddev, 0.0075)) {
+
+                const auto ref_mean = calc_mean<T>(refp, width);
+                if (ref_mean > d->ref_thr) {
+                    detect = true;
+                    break;
+                }
+            }
+
             stats.add_data(src_mean);
-
-            if ((cutoff = src_mean > thr))
-                break;
-
             srcp += src_stride;
             refp += ref_stride;
         }
-
-        if (!cutoff) {
+        if (!detect)
             start_y = 0;
-            end_y = height - 1;
-        }
-        else [[likely]] {
-            if (calc_mean<T>(refp, width) < d->ref_thr)
-                start_y = 0;
-            if (bord_y < start_y)
-                start_y = bord_y;
+        
+        srcp   = ori_srcp + end_y * src_stride;
+        refp   = ori_refp + end_y * ref_stride;
+        stats  = ExponentiallyWeightedStats<>();
+        detect = false;
+        for (; end_y >= 0; end_y--) {
+            const auto src_mean = calc_mean<T>(srcp, width);
 
-            srcp   = ori_srcp + end_y * src_stride;
-            refp   = ori_refp + end_y * ref_stride;
-            stats  = ExponentiallyWeightedStats<>();
-            bord_y = -1;
-            cutoff = false;
-            for (; end_y >= 0; end_y--) {
-                const auto src_mean = calc_mean<T>(srcp, width);
+            const auto st_mean = stats.mean();
+            const auto st_stddev = stats.stddev();
+            if (st_mean && st_stddev &&
+                src_mean > *st_mean + 3 * std::max(*st_stddev, 0.0075)) {
 
-                const auto st_mean = stats.mean();
-                const auto st_stddev = stats.stddev();
-                if (st_mean && st_stddev &&
-                    src_mean > *st_mean + 3 * std::max(*st_stddev, 0.0075))
-                    bord_y = std::max(bord_y, end_y);
-                else
-                    bord_y = -1;
-                stats.add_data(src_mean);
-
-                if ((cutoff = src_mean > thr))
+                const auto ref_mean = calc_mean<T>(refp, width);
+                if (ref_mean > d->ref_thr) {
+                    detect = true;
                     break;
+                }
+            }
 
-                srcp -= src_stride;
-                refp -= ref_stride;
-            }
-            if (!cutoff) {
-                vsapi->freeFrame(clip);
-                vsapi->freeFrame(ref);
-                vsapi->freeFrame(dst);
-                vsapi->setFilterError("vsletterbox: Unexpected internal bug \"exceed\"", frameCtx);
-                return nullptr;
-            }
-            else [[likely]] {
-                if (calc_mean<T>(refp, width) < d->ref_thr)
-                    end_y = height - 1;
-                if (bord_y > end_y)
-                    end_y = bord_y;
-            }
+            stats.add_data(src_mean);
+            srcp -= src_stride;
+            refp -= ref_stride;
         }
+        if (!detect)
+            end_y = height - 1;
 
         const auto start_y_prop = "VSLETTERBOX_TOP_ROW";
         const auto end_y_prop   = "VSLETTERBOX_BOTTOM_ROW";
