@@ -27,7 +27,7 @@ from vsexprtools import norm_expr
 from functools import partial
 from vskernels import Bilinear
 from vsmasktools import ExKirsch, Morpho
-from vstools import ChromaLocation, ColorRange, core, get_y, join, split, vs
+from vstools import ChromaLocation, ColorRange, core, join, split, vs
 
 def find_letterbox(
         clip,
@@ -52,8 +52,8 @@ def find_letterbox(
     mask = dynamic_ref(pre)
     letterbox = pre.letterbox.Find(ref=mask, ref_thr=dynamic_ref_thr)
     letterbox = letterbox.akarin.PropExpr(lambda: dict(
-        VSLETTERBOX_TOP_ROW=f"x.VSLETTERBOX_TOP_ROW {permanent_top_row} max",
-        VSLETTERBOX_BOTTOM_ROW=f"x.VSLETTERBOX_BOTTOM_ROW {permanent_bottom_row} min"
+        VSLETTERBOX_TOP_ROW=f"x.VSLETTERBOX_TOP_ROW {permanent_top_row} 1 + <= {permanent_top_row} x.VSLETTERBOX_TOP_ROW ?",
+        VSLETTERBOX_BOTTOM_ROW=f"x.VSLETTERBOX_BOTTOM_ROW {permanent_bottom_row} 1 - >= {permanent_bottom_row} x.VSLETTERBOX_BOTTOM_ROW ?"
     ))
     return letterbox
 
