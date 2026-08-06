@@ -126,12 +126,12 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
         }
     }
     else {
-        #pragma clang loop vectorize(assume_safety) interleave(enable)
-        for (int x = 0; x < width; x++) {
-            #pragma clang fp reassociate(on)
-            const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
-            sum += x_ * __builtin_sqrt(x_);
-        }
+        // #pragma clang loop vectorize(assume_safety) interleave(enable)
+        // for (int x = 0; x < width; x++) {
+        //     #pragma clang fp reassociate(on)
+        //     const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
+        //     sum += x_ * __builtin_sqrt(x_);
+        // }
     }
 
     return std::pow(sum / width, 2.0 / 3) / max_value;
