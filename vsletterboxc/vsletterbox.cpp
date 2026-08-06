@@ -31,7 +31,6 @@
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
-#include <utility>
 #include <VapourSynth4.h>
 #include <VSHelper4.h>
 
@@ -41,13 +40,13 @@ struct FindData {
     double  ref_thr;
 };
 
-// template <typename T>
-// static inline constexpr T get_max_value() {
-//     if constexpr (std::is_integral_v<T>)
-//         return std::numeric_limits<T>::max();
-//     else
-//         return 1.0;
-// }
+template <typename T>
+static inline constexpr T get_max_value() {
+    if constexpr (std::is_integral_v<T>)
+        return std::numeric_limits<T>::max();
+    else
+        return 1.0;
+}
 // template <typename T>
 // static inline constexpr T get_min_value() {
 //     if constexpr (std::is_integral_v<T>)
@@ -58,7 +57,7 @@ struct FindData {
 
 template <typename T>
 static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
-    // constexpr T max_value = get_max_value<T>();
+    constexpr T max_value = get_max_value<T>();
     // constexpr T min_value = get_min_value<T>();
 
     std::conditional_t<std::is_same_v<T, uint8_t>,
