@@ -114,7 +114,7 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 template <typename T>
 static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
     constexpr T max_value = get_max_value<T>();
-    constexpr T min_value = get_min_value<T>();
+    // constexpr T min_value = get_min_value<T>();
 
     double sum = 0.0;
     if constexpr (std::is_integral_v<T>) {
