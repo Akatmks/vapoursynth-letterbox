@@ -114,7 +114,7 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 template <typename T>
 static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
     constexpr T max_value = get_max_value<T>();
-    // constexpr T min_value = get_min_value<T>();
+    constexpr T min_value = get_min_value<T>();
 
     double sum = 0.0;
     if constexpr (std::is_integral_v<T>) {
@@ -126,12 +126,13 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
         }
     }
     else {
+        // For some reasons this doesn't work
         // #pragma clang loop vectorize(assume_safety) interleave(enable)
-        // for (int x = 0; x < width; x++) {
-        //     #pragma clang fp reassociate(on)
-        //     const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
-        //     sum += x_ * __builtin_sqrt(x_);
-        // }
+        for (int x = 0; x < width; x++) {
+            #pragma clang fp reassociate(on)
+            const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
+            sum += x_ * __builtin_sqrt(x_);
+        }
     }
 
     return std::pow(sum / width, 2.0 / 3) / max_value;
