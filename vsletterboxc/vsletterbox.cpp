@@ -138,6 +138,8 @@ static double calc_15_power_mean_helper(const T * VS_RESTRICT srcp, int width) {
 }
 template <typename T>
 static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
+    constexpr T max_value = get_max_value<T>();
+
     [[clang::noinline]] return std::pow(calc_15_power_mean_helper<T>(srcp, width) / width, 2.0 / 3) / max_value;
 }
 
