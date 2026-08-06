@@ -123,7 +123,7 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             const auto x_ = static_cast<double>(srcp[x]);
-            sum += x_ * __builtin_sqrt(x_);
+            sum += x_ * std::sqrt(x_);
         }
     }
     else {
@@ -131,7 +131,7 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
-            sum += x_ * __builtin_sqrt(x_);
+            sum += x_ * std::sqrt(x_);
         }
     }
 
