@@ -129,7 +129,7 @@ static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
         #pragma clang loop vectorize(assume_safety) interleave(enable)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
-            __builtin_assume(!isnan(srcp[x]));
+            if (std::isnan(srcp[x])) std::unreachable();
             const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
             sum += x_ * __builtin_sqrt(x_);
         }
