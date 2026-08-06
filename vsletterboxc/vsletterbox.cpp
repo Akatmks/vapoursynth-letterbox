@@ -85,6 +85,32 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
     return static_cast<double>(sum) / width / max_value;
 }
 
+template <typename T>
+static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
+    constexpr T max_value = get_max_value<T>();
+    constexpr T min_value = get_min_value<T>();
+
+    double sum = 0.0;
+    if constexpr (std::is_integral_v<T>) {
+        #pragma clang loop vectorize(assume_safety) interleave(enable)
+        for (int x = 0; x < width; x++) {
+            #pragma clang fp reassociate(on)
+            const auto x_ = static_cast<double>(srcp[x]);
+            sum += x_ * std::sqrt(x_);
+        }
+    }
+    else {
+        #pragma clang loop vectorize(assume_safety) interleave(enable)
+        for (int x = 0; x < width; x++) {
+            #pragma clang fp reassociate(on)
+            const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
+            sum += x_ * std::sqrt(x_);
+        }
+    }
+
+    return std::pow(sum / width, 2.0 / 3) / max_value;
+}
+
 // template <typename T>
 // static inline double calc_root_mean_square(const T * VS_RESTRICT srcp, int width) {
 //     constexpr T max_value = get_max_value<T>();
@@ -109,32 +135,6 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
 //     }
 
 //     return std::sqrt(sum / width) / max_value;
-// }
-
-// template <typename T>
-// static inline double calc_15_power_mean(const T * VS_RESTRICT srcp, int width) {
-//     constexpr T max_value = get_max_value<T>();
-//     constexpr T min_value = get_min_value<T>();
-
-//     double sum = 0.0;
-//     if constexpr (std::is_integral_v<T>) {
-//         #pragma clang loop vectorize(assume_safety) interleave(enable)
-//         for (int x = 0; x < width; x++) {
-//             #pragma clang fp reassociate(on)
-//             const auto x_ = static_cast<double>(srcp[x]);
-//             sum += x_ * std::sqrt(x_);
-//         }
-//     }
-//     else {
-//         #pragma clang loop vectorize(assume_safety) interleave(enable)
-//         for (int x = 0; x < width; x++) {
-//             #pragma clang fp reassociate(on)
-//             const auto x_ = static_cast<double>(std::clamp(srcp[x], min_value, max_value));
-//             sum += x_ * std::sqrt(x_);
-//         }
-//     }
-
-//     return std::pow(sum / width, 2.0 / 3) / max_value;
 // }
 
 // Incremental calculation of weighted mean and variance, Tony Finch, 2009
@@ -231,7 +231,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         int  bord_y = height;
         auto cutoff = false;
         for (; start_y < height; start_y++) {
-            const auto src_mean = calc_mean<T>(srcp, width);
+            const auto src_mean = calc_15_power_mean<T>(srcp, width);
 
             const auto st_mean = stats.mean();
             const auto st_stddev = stats.stddev();
@@ -265,7 +265,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             bord_y = -1;
             cutoff = false;
             for (; end_y >= 0; end_y--) {
-                const auto src_mean = calc_mean<T>(srcp, width);
+                const auto src_mean = calc_15_power_mean<T>(srcp, width);
 
                 const auto st_mean = stats.mean();
                 const auto st_stddev = stats.stddev();

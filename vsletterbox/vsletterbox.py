@@ -27,7 +27,7 @@ from vsexprtools import norm_expr
 from functools import partial
 from vskernels import Bilinear
 from vsmasktools import ExKirsch, Morpho
-from vstools import ChromaLocation, get_y, join, split, vs
+from vstools import ChromaLocation, core, get_y, join, split, vs
 
 def find_letterbox(
         clip,
@@ -47,7 +47,7 @@ def find_letterbox(
     mask = dynamic_ref(clip)
     prop = norm_expr(get_y(clip), f"x mask_max {dynamic_thr} * < 0 x ?")
     prop = prop.vszip.PlaneAverage(exclude=0, prop="Luma")
-    letterbox = core.akarin.PropExpr([clip, prop], lambda: dict(_VSLETTERBOX_THR=f"y.LumaAvg 0.25 * {dynamic_thr} max"))
+    letterbox = core.akarin.PropExpr([clip, prop], lambda: dict(_VSLETTERBOX_THR=f"y.LumaAvg 0.5 * {dynamic_thr} max {dynamic_thr} 1.5 * min"))
     letterbox = letterbox.letterbox.Find(ref=mask, ref_thr=dynamic_ref_thr)
     letterbox = letterbox.akarin.PropExpr(lambda: dict(
         VSLETTERBOX_TOP_ROW=f"x.VSLETTERBOX_TOP_ROW {permanent_top_row} 2 + <= {permanent_top_row} x.VSLETTERBOX_TOP_ROW ?",
