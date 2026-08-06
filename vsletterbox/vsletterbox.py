@@ -27,12 +27,11 @@ from vsexprtools import norm_expr
 from functools import partial
 from vskernels import Bilinear
 from vsmasktools import ExKirsch, Morpho
-from vstools import ChromaLocation, core, get_y, join, split, vs
+from vstools import ChromaLocation, ColorRange, core, get_y, join, split, vs
 
 def find_letterbox(
         clip,
         permanent=[0, 0],
-        dynamic_thr=0.1,
         dynamic_ref=ExKirsch().edgemask,
         dynamic_ref_thr=1/2
     ):
@@ -41,14 +40,17 @@ def find_letterbox(
     assert permanent[0] + permanent[1] < clip.height - 4
     permanent_top_row = permanent[0]
     permanent_bottom_row = clip.height - 1 - permanent[1]
-    assert dynamic_thr >= 0.0 and dynamic_thr <= 1.0
     assert dynamic_ref_thr >= 0.0 and dynamic_ref_thr <= 1.0
 
-    mask = dynamic_ref(clip)
-    prop = norm_expr(get_y(clip), f"x mask_max {dynamic_thr} * < 0 x ?")
-    prop = prop.vszip.PlaneAverage(exclude=0, prop="Luma")
-    letterbox = core.akarin.PropExpr([clip, prop], lambda: dict(_VSLETTERBOX_THR=f"y.LumaAvg 0.5 * {dynamic_thr} max {dynamic_thr} 1.5 * min"))
-    letterbox = letterbox.letterbox.Find(ref=mask, ref_thr=dynamic_ref_thr)
+    assert clip.format.num_planes in [1, 3]
+    if clip.format.num_planes == 3:
+        pre = Bilinear().scale(clip, format=source.format.replace(subsampling_w=0, subsampling_h=0), range=ColorRange.FULL)
+        pre = norm_expr(split(pre), "x y neutral - abs 0.5 * z neutral - abs 0.5 * + + mask_min max mask_max min")
+    else:
+        pre = norm_expr(clip, "x mask_min max mask_max min")
+
+    mask = dynamic_ref(pre)
+    letterbox = pre.letterbox.Find(ref=mask, ref_thr=dynamic_ref_thr)
     letterbox = letterbox.akarin.PropExpr(lambda: dict(
         VSLETTERBOX_TOP_ROW=f"x.VSLETTERBOX_TOP_ROW {permanent_top_row} 2 + <= {permanent_top_row} x.VSLETTERBOX_TOP_ROW ?",
         VSLETTERBOX_BOTTOM_ROW=f"x.VSLETTERBOX_BOTTOM_ROW {permanent_bottom_row} 2 - >= {permanent_bottom_row} x.VSLETTERBOX_BOTTOM_ROW ?"
@@ -58,7 +60,6 @@ def find_letterbox(
 def letterbox_mask(
         clip,
         permanent=[0, 0],
-        dynamic_thr=0.1,
         dynamic_ref=ExKirsch().edgemask,
         dynamic_ref_thr=1/2,
         fullblack_thr=1/4
@@ -68,12 +69,10 @@ def letterbox_mask(
     assert permanent[0] + permanent[1] < clip.height - 4
     permanent_top_row = permanent[0]
     permanent_bottom_row = clip.height - 1 - permanent[1]
-    assert dynamic_thr >= 0.0 and dynamic_thr <= 1.0
     assert dynamic_ref_thr >= 0.0 and dynamic_ref_thr <= 1.0
     assert fullblack_thr >= 0.0 and fullblack_thr <= 1.0
 
-    clip_y = get_y(clip)
-    letterbox = find_letterbox(clip_y, permanent, dynamic_thr, dynamic_ref, dynamic_ref_thr)
+    letterbox = find_letterbox(clip, permanent, dynamic_ref, dynamic_ref_thr)
     letterbox = letterbox.akarin.PropExpr(lambda: dict(_VSLETTERBOX_AREA_MULTIPLIER=f"""
 x.VSLETTERBOX_BOTTOM_ROW 1 + x.VSLETTERBOX_TOP_ROW - {permanent_bottom_row} 1 + {permanent_top_row} - /
 {fullblack_thr} /
@@ -92,7 +91,6 @@ def clean_letterbox(
         thr=0.075,
         permanent=[0, 0],
         dynamic=True,
-        dynamic_thr=0.1,
         dynamic_ref=ExKirsch().edgemask,
         dynamic_ref_thr=1/2,
         fullblack_thr=1/4,
@@ -105,17 +103,15 @@ def clean_letterbox(
     assert permanent[0] + permanent[1] < clip.height - 4
     permanent_top_row = permanent[0]
     permanent_bottom_row = clip.height - 1 - permanent[1]
-    assert dynamic_thr >= 0.0 and dynamic_thr <= 1.0
     assert dynamic_ref_thr >= 0.0 and dynamic_ref_thr <= 1.0
     assert fullblack_thr >= 0.0 and fullblack_thr <= 1.0
 
-    letterbox = find_letterbox(clip, permanent, dynamic_thr, dynamic_ref, dynamic_ref_thr)
+    letterbox = find_letterbox(clip, permanent, dynamic_ref, dynamic_ref_thr)
     letterbox = letterbox.akarin.PropExpr(lambda: dict(_VSLETTERBOX_AREA_MULTIPLIER=f"""
 x.VSLETTERBOX_BOTTOM_ROW 1 + x.VSLETTERBOX_TOP_ROW - {permanent_bottom_row} 1 + {permanent_top_row} - /
 {fullblack_thr} /
 """))
-
-    letterbox_mask = norm_expr(get_y(letterbox), f"""
+    letterbox_mask = norm_expr(letterbox, f"""
 Y x.VSLETTERBOX_TOP_ROW =
     x.VSLETTERBOX_TOP_ROW {permanent_top_row} =
         mask_max
@@ -144,13 +140,18 @@ Y x.VSLETTERBOX_TOP_ROW =
         letterbox_mask_uv = Morpho.minimum(letterbox_mask)
         letterbox_mask = join(letterbox_mask, letterbox_mask_uv, letterbox_mask_uv)
         letterbox_mask = Bilinear().scale(letterbox_mask, format=clip.format, chromaloc=ChromaLocation.from_video(clip))
-    clean = norm_expr([letterbox, letterbox_mask], ("""
+    clean = norm_expr([clip, letterbox_mask], ("""
 y mask_max / mask!
 x plane_min - 1 mask@ - * plane_min +
 """, """
 y mask_max / mask!
 x 1 mask@ - * neutral mask@ * +
 """))
+    clean = core.akarin.PropExpr([clean, letterbox_mask], lambda: dict(
+        VSLETTERBOX_TOP_ROW="y.VSLETTERBOX_TOP_ROW",
+        VSLETTERBOX_BOTTOM_ROW="y.VSLETTERBOX_BOTTOM_ROW",
+        _VSLETTERBOX_AREA_MULTIPLIER="y._VSLETTERBOX_AREA_MULTIPLIER"
+    ))
 
     if border_y or border_u or border_v:
         def border(clip, top_row, bottom_row, f):
@@ -166,7 +167,6 @@ x 1 mask@ - * neutral mask@ * +
                 combine.append(process)
             return core.std.StackVertical(combine)
 
-        assert clean.format != vs.YUV410P8
         clean_planes = split(clean)
         for plane in range(clean.format.num_planes):
             plane_name = ["y", "u", "v"][plane]
@@ -183,6 +183,7 @@ x 1 mask@ - * neutral mask@ * +
                             return border(clean_p, f.props["VSLETTERBOX_TOP_ROW"], f.props["VSLETTERBOX_BOTTOM_ROW"], border_p)
                     process_p = core.std.FrameEval(clean_p, partial(border_eval, clean_p=clean_p, standard_border_p=standard_border_p, border=border, border_p=border_p), prop_src=clean_p)
                 else:
+                    assert clip.format.subsampling_h == 1
                     standard_border_p = border(clean_p, permanent_top_row >> 1, (permanent_bottom_row + 1) >> 1, border_p)
                     def border_eval(n, f, clean_p, standard_border_p, border, border_p):
                         if f.props["VSLETTERBOX_TOP_ROW"] == permanent_top_row >> 1 and \

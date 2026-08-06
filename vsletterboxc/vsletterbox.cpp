@@ -41,25 +41,25 @@ struct FindData {
     double  ref_thr;
 };
 
-template <typename T>
-static inline constexpr T get_max_value() {
-    if constexpr (std::is_integral_v<T>)
-        return std::numeric_limits<T>::max();
-    else
-        return 1.0;
-}
-template <typename T>
-static inline constexpr T get_min_value() {
-    if constexpr (std::is_integral_v<T>)
-        return std::numeric_limits<T>::min();
-    else
-        return 0.0;
-}
+// template <typename T>
+// static inline constexpr T get_max_value() {
+//     if constexpr (std::is_integral_v<T>)
+//         return std::numeric_limits<T>::max();
+//     else
+//         return 1.0;
+// }
+// template <typename T>
+// static inline constexpr T get_min_value() {
+//     if constexpr (std::is_integral_v<T>)
+//         return std::numeric_limits<T>::min();
+//     else
+//         return 0.0;
+// }
 
 template <typename T>
 static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
-    constexpr T max_value = get_max_value<T>();
-    constexpr T min_value = get_min_value<T>();
+    // constexpr T max_value = get_max_value<T>();
+    // constexpr T min_value = get_min_value<T>();
 
     std::conditional_t<std::is_same_v<T, uint8_t>,
                        uint32_t,
@@ -67,20 +67,20 @@ static inline double calc_mean(const T * VS_RESTRICT srcp, int width) {
                                           uint64_t,
                                           double>>
         sum = 0;
-    if constexpr (std::is_integral_v<T>) {
+    // if constexpr (std::is_integral_v<T>) {
         #pragma clang loop vectorize(assume_safety) interleave(enable)
         for (int x = 0; x < width; x++) {
             #pragma clang fp reassociate(on)
             sum += srcp[x];
         }
-    }
-    else {
-        #pragma clang loop vectorize(assume_safety) interleave(enable)
-        for (int x = 0; x < width; x++) {
-            #pragma clang fp reassociate(on)
-            sum += std::clamp(srcp[x], min_value, max_value);
-        }
-    }
+    // }
+    // else {
+        // #pragma clang loop vectorize(assume_safety) interleave(enable)
+        // for (int x = 0; x < width; x++) {
+        //     #pragma clang fp reassociate(on)
+        //     sum += std::clamp(srcp[x], min_value, max_value);
+        // }
+    // }
 
     return static_cast<double>(sum) / width / max_value;
 }
@@ -227,7 +227,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             const auto st_mean = stats.mean();
             const auto st_stddev = stats.stddev();
             if (st_mean && st_stddev &&
-                src_mean > *st_mean + 3 * std::max(*st_stddev, 0.0075)) {
+                src_mean > *st_mean + 4 * std::max(*st_stddev, 0.005)) {
 
                 const auto ref_mean = calc_mean<T>(refp, width);
                 if (ref_mean > d->ref_thr) {
@@ -253,7 +253,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             const auto st_mean = stats.mean();
             const auto st_stddev = stats.stddev();
             if (st_mean && st_stddev &&
-                src_mean > *st_mean + 3 * std::max(*st_stddev, 0.0075)) {
+                src_mean > *st_mean + 4 * std::max(*st_stddev, 0.005)) {
 
                 const auto ref_mean = calc_mean<T>(refp, width);
                 if (ref_mean > d->ref_thr) {
@@ -269,8 +269,8 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         if (!detect)
             end_y = height - 1;
 
-        const auto start_y_prop = "VSLETTERBOX_TOP_ROW";
-        const auto end_y_prop   = "VSLETTERBOX_BOTTOM_ROW";
+        constexpr auto start_y_prop = "VSLETTERBOX_TOP_ROW";
+        constexpr auto end_y_prop   = "VSLETTERBOX_BOTTOM_ROW";
         vsapi->mapSetInt(props, start_y_prop, start_y, maReplace);
         vsapi->mapSetInt(props, end_y_prop, end_y, maReplace);
             
