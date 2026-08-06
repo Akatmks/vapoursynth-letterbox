@@ -52,8 +52,8 @@ def find_letterbox(
     mask = dynamic_ref(pre)
     letterbox = pre.letterbox.Find(ref=mask, ref_thr=dynamic_ref_thr)
     letterbox = letterbox.akarin.PropExpr(lambda: dict(
-        VSLETTERBOX_TOP_ROW=f"x.VSLETTERBOX_TOP_ROW {permanent_top_row} 2 + <= {permanent_top_row} x.VSLETTERBOX_TOP_ROW ?",
-        VSLETTERBOX_BOTTOM_ROW=f"x.VSLETTERBOX_BOTTOM_ROW {permanent_bottom_row} 2 - >= {permanent_bottom_row} x.VSLETTERBOX_BOTTOM_ROW ?"
+        VSLETTERBOX_TOP_ROW=f"x.VSLETTERBOX_TOP_ROW {permanent_top_row} max",
+        VSLETTERBOX_BOTTOM_ROW=f"x.VSLETTERBOX_BOTTOM_ROW {permanent_bottom_row} min"
     ))
     return letterbox
 

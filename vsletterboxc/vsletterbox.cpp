@@ -226,7 +226,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             const auto st_mean = stats.mean();
             const auto st_stddev = stats.stddev();
             if (st_mean && st_stddev &&
-                src_mean > *st_mean + 5 * std::max(*st_stddev, 0.005)) {
+                src_mean > *st_mean + 5 * std::max(*st_stddev, 0.0075)) {
 
                 const auto ref_mean = calc_mean<T>(refp, width);
                 if (ref_mean > d->ref_thr) {
@@ -252,7 +252,7 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
             const auto st_mean = stats.mean();
             const auto st_stddev = stats.stddev();
             if (st_mean && st_stddev &&
-                src_mean > *st_mean + 5 * std::max(*st_stddev, 0.005)) {
+                src_mean > *st_mean + 5 * std::max(*st_stddev, 0.0075)) {
 
                 const auto ref_mean = calc_mean<T>(refp, width);
                 if (ref_mean > d->ref_thr) {
