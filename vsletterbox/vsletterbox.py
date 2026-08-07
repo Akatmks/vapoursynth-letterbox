@@ -139,10 +139,13 @@ Y x.VSLETTERBOX_TOP_ROW =
     letterbox_mask = Morpho.minimum(letterbox_mask)
 
     assert clip.format.num_planes in [1, 3]
-    if clip.format.num_planes == 3 and (clip.format.subsampling_h or clip.format.subsampling_w):
-        letterbox_mask_uv = Morpho.minimum(letterbox_mask)
-        letterbox_mask = join(letterbox_mask, letterbox_mask_uv, letterbox_mask_uv)
-        letterbox_mask = Bilinear().scale(letterbox_mask, format=clip.format, chromaloc=ChromaLocation.from_video(clip))
+    if clip.format.num_planes == 3:
+        if clip.format.subsampling_h or clip.format.subsampling_w:
+            letterbox_mask_uv = Morpho.minimum(letterbox_mask)
+            letterbox_mask = join(letterbox_mask, letterbox_mask_uv, letterbox_mask_uv)
+            letterbox_mask = Bilinear().scale(letterbox_mask, format=clip.format, chromaloc=ChromaLocation.from_video(clip))
+        else:
+            letterbox_mask = join(letterbox_mask, letterbox_mask, letterbox_mask)
     clean = norm_expr([clip, letterbox_mask], ("""
 y mask_max / mask!
 x plane_min - 1 mask@ - * plane_min +
