@@ -56,11 +56,11 @@ We detect letterbox based on three details:
 
 Once letterbox border is identified:  
 
-5. Any pixel of the letterbox whose brightness is below a set threshold is cleaned to pure black.  
+5. Any pixel of the letterbox whose brightness and colour is below a set threshold is cleaned to pure black.  
   This threshold is to protect cases where there are intentional items in the border such as the opening of 173295 / 57810.  
   ⠀  
   This is protected by a `Morpho.closing()` to clean outlier noise pixels and a `Morpho.minimum()` to make the cleaning stay further away from intentional items.  
-  If the source contains very heavy noise, the threshold for this needs to be increased.  
+  If the source contains very heavy noise or chroma noise, the threshold for this needs to be increased.  
 
 6. We don't want to eliminate the noise in a pure black screen for multiple reasons.  
   First, the video is still going and it shouldn't just be completely blank.  
@@ -80,7 +80,7 @@ clean_letterbox(
 
     # Threshold in method 5.
     # Default to around 19 at 8-bit
-    thr:             float     = 0.075
+    thr:             float     = 0.015
 
     # Permanent letterbox used in method 3. and 4., as well as in method 6.
     permanent:       list[int] = [0, 0], # [Top, Bottom]

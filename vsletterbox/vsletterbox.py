@@ -27,7 +27,7 @@ from vsexprtools import norm_expr
 from functools import partial
 from vskernels import Bilinear
 from vsmasktools import ExKirsch, Morpho
-from vstools import ChromaLocation, ColorRange, core, join, split, vs
+from vstools import ChromaLocation, ColorRange, core, get_y, join, split, vs
 
 def find_letterbox(
         clip,
@@ -45,7 +45,7 @@ def find_letterbox(
     assert clip.format.num_planes in [1, 3]
     if clip.format.num_planes == 3:
         pre = Bilinear().scale(clip, format=clip.format.replace(subsampling_w=0, subsampling_h=0), range=ColorRange.FULL)
-        pre = norm_expr(split(pre), "x y neutral - abs 0.5 * z neutral - abs 0.5 * + + 0 max mask_max min")
+        pre = norm_expr(split(pre), "x y neutral - abs 0.25 * z neutral - abs 0.25 * + + 0 max mask_max min")
     else:
         pre = norm_expr(clip, "x 0 max mask_max min")
 
@@ -88,7 +88,7 @@ Y {permanent_top_row} < mask_max
 
 def clean_letterbox(
         clip,
-        thr=0.075,
+        thr=0.015,
         permanent=[0, 0],
         dynamic=True,
         dynamic_ref=ExKirsch().edgemask,
@@ -124,7 +124,7 @@ Y x.VSLETTERBOX_TOP_ROW =
         x.VSLETTERBOX_BOTTOM_ROW {permanent_bottom_row} =
             mask_max
             mask_max x._VSLETTERBOX_AREA_MULTIPLIER * ?
-        x mask_max {thr} * <=
+        x plane_max plane_min - {thr} * plane_min + <=
             Y {permanent_top_row} <
                 mask_max
                 Y x.VSLETTERBOX_TOP_ROW <
@@ -136,7 +136,6 @@ Y x.VSLETTERBOX_TOP_ROW =
                             0 ? ? ? ?
             0 ? ? ?
 """)
-    letterbox_mask = Morpho.closing(letterbox_mask)
     letterbox_mask = Morpho.minimum(letterbox_mask)
 
     assert clip.format.num_planes in [1, 3]
