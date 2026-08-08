@@ -101,8 +101,8 @@ def clean_letterbox(
     ):
     assert thr >= 0.0 and thr <= 1.0
     assert transition >= 0.0 and transition <= 1.0
-    if transition == 0.0:
-        transition = 0.001
+    if transition < 0.00001:
+        transition = 0.00001
     assert permanent[0] >= 0
     assert permanent[1] >= 0
     assert permanent[0] + permanent[1] < clip.height - 4
@@ -118,18 +118,18 @@ def clean_letterbox(
         letterbox = letterbox.std.SetFrameProps(VSLETTERBOX_TOP_ROW=permanent_top_row, VSLETTERBOX_BOTTOM_ROW=permanent_bottom_row)
     letterbox = letterbox.akarin.PropExpr(lambda: dict(_VSLETTERBOX_AREA_MULTIPLIER=f"""
 x.VSLETTERBOX_BOTTOM_ROW 1 + x.VSLETTERBOX_TOP_ROW - {permanent_bottom_row} 1 + {permanent_top_row} - /
-{fullblack_thr} /
+{fullblack_thr} / 0 1 clamp
 """))
     letterbox_mask = norm_expr(letterbox, f"""
 plane_max plane_min - range!
 {thr} range@ * plane_min + thr!
-{transition} range@ * transition!
+{transition} range@ * 1 swap / transition!
 Y x.VSLETTERBOX_TOP_ROW = mask_max
     Y x.VSLETTERBOX_BOTTOM_ROW = mask_max
-        Y {permanent_top_row} < mask_max thr@ x - transition@ / 0 1 clamp *
-            Y x.VSLETTERBOX_TOP_ROW < mask_max x._VSLETTERBOX_AREA_MULTIPLIER * thr@ x - transition@ / 0 1 clamp *
-                Y {permanent_bottom_row} > mask_max thr@ x - transition@ / 0 1 clamp *
-                    Y x.VSLETTERBOX_BOTTOM_ROW > mask_max x._VSLETTERBOX_AREA_MULTIPLIER * thr@ x - transition@ / 0 1 clamp *
+        Y {permanent_top_row} < mask_max thr@ x - transition@ * 0 1 clamp *
+            Y x.VSLETTERBOX_TOP_ROW < mask_max x._VSLETTERBOX_AREA_MULTIPLIER * thr@ x - transition@ * 0 1 clamp *
+                Y {permanent_bottom_row} > mask_max thr@ x - transition@ * 0 1 clamp *
+                    Y x.VSLETTERBOX_BOTTOM_ROW > mask_max x._VSLETTERBOX_AREA_MULTIPLIER * thr@ x - transition@ * 0 1 clamp *
                         0 ? ? ? ? ? ?
 """) # First two conditions because of ↓
     letterbox_mask = Morpho.minimum(letterbox_mask)
