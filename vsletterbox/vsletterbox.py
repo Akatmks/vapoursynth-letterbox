@@ -88,7 +88,8 @@ Y {permanent_top_row} < mask_max
 
 def clean_letterbox(
         clip,
-        thr=0.015,
+        thr=0.030,
+        transition=0.020,
         permanent=[0, 0],
         dynamic=True,
         dynamic_ref=ExKirsch().edgemask,
@@ -116,25 +117,14 @@ x.VSLETTERBOX_BOTTOM_ROW 1 + x.VSLETTERBOX_TOP_ROW - {permanent_bottom_row} 1 + 
 {fullblack_thr} /
 """))
     letterbox_mask = norm_expr(letterbox, f"""
-Y x.VSLETTERBOX_TOP_ROW =
-    x.VSLETTERBOX_TOP_ROW {permanent_top_row} =
-        mask_max
-        mask_max x._VSLETTERBOX_AREA_MULTIPLIER * ?
-    Y x.VSLETTERBOX_BOTTOM_ROW =
-        x.VSLETTERBOX_BOTTOM_ROW {permanent_bottom_row} =
-            mask_max
-            mask_max x._VSLETTERBOX_AREA_MULTIPLIER * ?
-        x plane_max plane_min - {thr} * plane_min + <=
-            Y {permanent_top_row} <
-                mask_max
-                Y x.VSLETTERBOX_TOP_ROW <
-                    mask_max x._VSLETTERBOX_AREA_MULTIPLIER *
-                    Y {permanent_bottom_row} >
-                        mask_max
-                        Y x.VSLETTERBOX_BOTTOM_ROW >
-                            mask_max x._VSLETTERBOX_AREA_MULTIPLIER *
-                            0 ? ? ? ?
-            0 ? ? ?
+plane_max plane_min - range!
+{thr} range@ * plane_min + thr!
+{transition} range@ * transition!
+Y {permanent_top_row} < mask_max thr@ x - transition@ / 0 1 clamp *
+    Y x.VSLETTERBOX_TOP_ROW < mask_max x._VSLETTERBOX_AREA_MULTIPLIER * thr@ x - transition@ / 0 1 clamp *
+        Y {permanent_bottom_row} > mask_max thr@ x - transition@ / 0 1 clamp *
+            Y x.VSLETTERBOX_BOTTOM_ROW > mask_max x._VSLETTERBOX_AREA_MULTIPLIER * thr@ x - transition@ / 0 1 clamp *
+            0 ? ? ? ?
 """)
     letterbox_mask = Morpho.minimum(letterbox_mask)
 
