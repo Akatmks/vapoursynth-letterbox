@@ -124,12 +124,14 @@ x.VSLETTERBOX_BOTTOM_ROW 1 + x.VSLETTERBOX_TOP_ROW - {permanent_bottom_row} 1 + 
 plane_max plane_min - range!
 {thr} range@ * plane_min + thr!
 {transition} range@ * transition!
-Y {permanent_top_row} < mask_max thr@ x - transition@ / 0 1 clamp *
-    Y x.VSLETTERBOX_TOP_ROW < mask_max x._VSLETTERBOX_AREA_MULTIPLIER * thr@ x - transition@ / 0 1 clamp *
-        Y {permanent_bottom_row} > mask_max thr@ x - transition@ / 0 1 clamp *
-            Y x.VSLETTERBOX_BOTTOM_ROW > mask_max x._VSLETTERBOX_AREA_MULTIPLIER * thr@ x - transition@ / 0 1 clamp *
-            0 ? ? ? ?
-""")
+Y x.VSLETTERBOX_TOP_ROW = mask_max
+    Y x.VSLETTERBOX_BOTTOM_ROW = mask_max
+        Y {permanent_top_row} < mask_max thr@ x - transition@ / 0 1 clamp *
+            Y x.VSLETTERBOX_TOP_ROW < mask_max x._VSLETTERBOX_AREA_MULTIPLIER * thr@ x - transition@ / 0 1 clamp *
+                Y {permanent_bottom_row} > mask_max thr@ x - transition@ / 0 1 clamp *
+                    Y x.VSLETTERBOX_BOTTOM_ROW > mask_max x._VSLETTERBOX_AREA_MULTIPLIER * thr@ x - transition@ / 0 1 clamp *
+                        0 ? ? ? ? ? ?
+""") # First two conditions because of ↓
     letterbox_mask = Morpho.minimum(letterbox_mask)
 
     assert clip.format.num_planes in [1, 3]
