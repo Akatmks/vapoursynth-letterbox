@@ -89,7 +89,7 @@ Y {permanent_top_row} < mask_max
 def clean_letterbox(
         clip,
         thr=0.030,
-        transition=0.020,
+        transition=0.015,
         permanent=[0, 0],
         dynamic=True,
         dynamic_ref=ExKirsch().edgemask,
@@ -99,6 +99,10 @@ def clean_letterbox(
         border_u=None,
         border_v=None
     ):
+    assert thr >= 0.0 and thr <= 1.0
+    assert transition >= 0.0 and transition <= 1.0
+    if transition == 0.0:
+        transition = 0.001
     assert permanent[0] >= 0
     assert permanent[1] >= 0
     assert permanent[0] + permanent[1] < clip.height - 4
