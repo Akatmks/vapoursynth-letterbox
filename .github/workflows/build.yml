@@ -5,8 +5,8 @@ jobs:
   build:
     strategy:
       matrix:
-        runner: ['windows-latest', 'ubuntu-latest', 'macos-latest', 'macos-26-intel']
-    runs-on: ${{ matrix.runner }}
+        os: ['windows-latest', 'ubuntu-latest', 'macos-latest', 'macos-26-intel']
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v7
 
