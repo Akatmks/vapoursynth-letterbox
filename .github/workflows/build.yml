@@ -5,8 +5,19 @@ jobs:
   build:
     strategy:
       matrix:
-        os: ['windows-latest', 'ubuntu-latest', 'macos-latest', 'macos-26-intel']
+        include:
+          - os: windows-latest
+            shell: msys2 {0}
+          - os: ubuntu-latest
+            shell: bash
+          - os: macos-latest
+            shell: bash
+          - os: macos-26-intel
+            shell: bash
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     steps:
     - uses: actions/checkout@v7
 
@@ -25,10 +36,8 @@ jobs:
       with:
         python-version: '3.13'
     - run: python -m pip install build meson meson-python ninja vapoursynth wheel
-      shell: ${{ runner.os == 'Windows' && 'msys2 {0}' || 'bash' }}
 
     - run: CC=clang CXX=clang++ CFLAGS="-march=x86-64-v3 -mtune=znver2 -Werror" CXXFLAGS="-march=x86-64-v3 -mtune=znver2 -Werror" LDFLAGS="-fuse-ld=lld" python -m build --no-isolation
-      shell: msys2 {0}
       if: ${{ runner.os == 'Windows' && runner.arch == 'X64' }}
     - run: CC=clang CXX=clang++ CFLAGS="-march=x86-64-v3 -mtune=znver2 -Werror" CXXFLAGS="-march=x86-64-v3 -mtune=znver2 -Werror" LDFLAGS="-fuse-ld=lld --rtlib=compiler-rt -Wl,-O3" python -m build --no-isolation
       if: ${{ runner.os == 'Linux' && runner.arch == 'X64' }}
@@ -37,7 +46,6 @@ jobs:
     - run: CC=clang CXX=clang++ CFLAGS="-march=skylake -mtune=skylake -Werror" CXXFLAGS="-march=skylake -mtune=skylake -Werror" LDFLAGS="-fuse-ld=lld --rtlib=compiler-rt" python -m build --no-isolation
       if: ${{ runner.os == 'macOS' && runner.arch == 'X64' }}
     - run: python -m wheel tags --remove --python-tag py3 --abi-tag none dist/*.whl
-      shell: ${{ runner.os == 'Windows' && 'msys2 {0}' || 'bash' }}
 
     - uses: actions/upload-artifact@v7
       with:
