@@ -4,6 +4,7 @@ on: push
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -41,9 +42,9 @@ jobs:
       if: ${{ runner.os == 'Windows' && runner.arch == 'X64' }}
     - run: CC=clang CXX=clang++ CFLAGS="-march=x86-64-v3 -mtune=znver2 -Werror" CXXFLAGS="-march=x86-64-v3 -mtune=znver2 -Werror" LDFLAGS="-fuse-ld=lld --rtlib=compiler-rt -Wl,-O3" python -m build --no-isolation
       if: ${{ runner.os == 'Linux' && runner.arch == 'X64' }}
-    - run: CC=clang CXX=clang++ CFLAGS="-march=armv8.5-a+simd+crypto -mtune=apple-m3 -Werror" CXXFLAGS="-march=armv8.5-a+simd+crypto -mtune=apple-m3 -Werror" LDFLAGS="-fuse-ld=lld --rtlib=compiler-rt" python -m build --no-isolation
+    - run: PATH="/opt/homebrew/opt/llvm/bin:$PATH" CC=clang CXX=clang++ CFLAGS="-I/opt/homebrew/opt/llvm/include -march=armv8.5-a+simd+crypto -mtune=apple-m3 -Werror" CXXFLAGS="-I/opt/homebrew/opt/llvm/include -march=armv8.5-a+simd+crypto -mtune=apple-m3 -Werror" LDFLAGS="-fuse-ld=lld --rtlib=compiler-rt -L/opt/homebrew/opt/llvm/lib" python -m build --no-isolation
       if: ${{ runner.os == 'macOS' && runner.arch == 'ARM64' }}
-    - run: CC=clang CXX=clang++ CFLAGS="-march=skylake -mtune=skylake -Werror" CXXFLAGS="-march=skylake -mtune=skylake -Werror" LDFLAGS="-fuse-ld=lld --rtlib=compiler-rt" python -m build --no-isolation
+    - run: PATH="/opt/homebrew/opt/llvm/bin:$PATH" CC=clang CXX=clang++ CFLAGS="-I/opt/homebrew/opt/llvm/include -march=skylake -mtune=skylake -Werror" CXXFLAGS="-I/opt/homebrew/opt/llvm/include -march=skylake -mtune=skylake -Werror" LDFLAGS="-fuse-ld=lld --rtlib=compiler-rt -L/opt/homebrew/opt/llvm/lib" python -m build --no-isolation
       if: ${{ runner.os == 'macOS' && runner.arch == 'X64' }}
     - run: python -m wheel tags --remove --python-tag py3 --abi-tag none dist/*.whl
 
