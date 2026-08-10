@@ -6,6 +6,7 @@ requires = ["meson-python"]
 name = "vapoursynth-letterbox"
 description = "Find and clean letterbox for VapourSynth"
 readme = "README.md"
+license-files = ["LICENSE"]
 requires-python = ">=3.8"
 dependencies = [
     "vapoursynth",
