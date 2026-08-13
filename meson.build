@@ -10,7 +10,7 @@ if cc.get_id() == 'clang'
   add_project_arguments('-ffinite-math-only', language : ['c', 'cpp'])
 elif cc.get_id() == 'clang-cl'
   add_project_arguments('/clang:-ffinite-math-only', language : ['c', 'cpp'])
-end
+endif
 
 sources = [
   'vsletterboxc/vsletterbox.cpp'
