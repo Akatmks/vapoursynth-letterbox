@@ -51,6 +51,9 @@ jobs:
     - run: PATH="/opt/homebrew/opt/llvm/bin:$PATH" CC=clang CXX=clang++ CFLAGS="-I/opt/homebrew/opt/llvm/include -march=skylake -mtune=skylake -Werror" CXXFLAGS="-I/opt/homebrew/opt/llvm/include -march=skylake -mtune=skylake -Werror" LDFLAGS="-fuse-ld=lld --rtlib=compiler-rt -L/opt/homebrew/opt/llvm/lib" python -m build --no-isolation
       if: ${{ runner.os == 'macOS' && runner.arch == 'X64' }}
     - run: python -m wheel tags --remove --python-tag py3 --abi-tag none dist/*.whl
+      if: ${{ runner.os != 'Linux' }}
+    - run: python -m wheel tags --remove --python-tag py3 --abi-tag none --platform-tag manylinux_2_24_x86_64 dist/*.whl
+      if: ${{ runner.os == 'Linux' }}
 
     - uses: actions/upload-artifact@v7
       with:
