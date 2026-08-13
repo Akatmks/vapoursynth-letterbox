@@ -54,7 +54,7 @@ jobs:
       if: ${{ runner.os == 'macOS' && runner.arch == 'X64' }}
     - run: python -m wheel tags --remove --python-tag py3 --abi-tag none dist/*.whl
       if: ${{ runner.os != 'Linux' }}
-    - run: python -m wheel tags --remove --python-tag py3 --abi-tag none --platform-tag manylinux_x86_64 dist/*.whl
+    - run: python -m wheel tags --remove --python-tag py3 --abi-tag none --platform-tag manylinux_2_24_x86_64 dist/*.whl
       if: ${{ runner.os == 'Linux' }}
 
     - uses: pypa/gh-action-pypi-publish@release/v1
