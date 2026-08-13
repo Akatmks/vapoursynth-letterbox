@@ -216,10 +216,10 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         int start_y = 0;
         int end_y = height - 1;
 
-        auto VS_RESTRICT srcp   = ori_srcp;
-        auto VS_RESTRICT refp   = ori_refp;
-        auto             stats  = ExponentiallyWeightedStats<>();
-        auto             detect = false;
+        auto * VS_RESTRICT srcp   = ori_srcp;
+        auto * VS_RESTRICT refp   = ori_refp;
+        auto               stats  = ExponentiallyWeightedStats<>();
+        auto               detect = false;
         for (; start_y < height; start_y++) {
             const auto src_mean = calc_mean<T>(srcp, width);
 

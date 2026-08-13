@@ -6,7 +6,11 @@ cc = meson.get_compiler('cpp')
 if cc.get_id() == 'msvc' or cc.get_id() == 'gcc'
   error('''vsletterbox only supports clang. It's the compiler that produces the fastest binary, and we've also utilised clang language extension to ensure faster speed''')
 endif
-add_project_arguments('-ffinite-math-only', language : ['c', 'cpp'])
+if cc.get_id() == 'clang'
+  add_project_arguments('-ffinite-math-only', language : ['c', 'cpp'])
+elif cc.get_id() == 'clang-cl'
+  add_project_arguments('/clang:-ffinite-math-only', language : ['c', 'cpp'])
+end
 
 sources = [
   'vsletterboxc/vsletterbox.cpp'
