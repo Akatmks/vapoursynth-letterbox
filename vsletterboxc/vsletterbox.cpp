@@ -183,20 +183,20 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         vsapi->requestFrameFilter(n, d->ref, frameCtx);
     }
     else if (activationReason == arAllFramesReady) {
-        const auto clip = vsapi->getFrameFilter(n, d->clip, frameCtx);
+        auto clip = vsapi->getFrameFilter(n, d->clip, frameCtx);
         if (!clip) {
             vsapi->setFilterError("vsletterbox: Failed to get frame from VapourSynth", frameCtx);
             return nullptr;
         }
-        const auto ref  = vsapi->getFrameFilter(n, d->ref, frameCtx);
+        auto ref  = vsapi->getFrameFilter(n, d->ref, frameCtx);
         if (!ref) {
             vsapi->freeFrame(clip);
             vsapi->setFilterError("vsletterbox: Failed to get frame from VapourSynth", frameCtx);
             return nullptr;
         }
 
-        const int height = vsapi->getFrameHeight(clip, 0);
-        const int width  = vsapi->getFrameWidth(clip, 0);
+        const auto height = vsapi->getFrameHeight(clip, 0);
+        const auto width  = vsapi->getFrameWidth(clip, 0);
         if (height != vsapi->getFrameHeight(ref, 0) ||
             width != vsapi->getFrameWidth(ref, 0)) {
             vsapi->freeFrame(clip);
@@ -216,10 +216,10 @@ static const VSFrame * VS_CC letterbox_search_get_frame(int n, int activationRea
         int start_y = 0;
         int end_y = height - 1;
 
-        auto srcp   = ori_srcp;
-        auto refp   = ori_refp;
-        auto stats  = ExponentiallyWeightedStats<>();
-        auto detect = false;
+        auto VS_RESTRICT srcp   = ori_srcp;
+        auto VS_RESTRICT refp   = ori_refp;
+        auto             stats  = ExponentiallyWeightedStats<>();
+        auto             detect = false;
         for (; start_y < height; start_y++) {
             const auto src_mean = calc_mean<T>(srcp, width);
 
@@ -292,10 +292,10 @@ static void VS_CC letterbox_search_free(void *instanceData, VSCore *core, const 
 static void VS_CC letterbox_search_create(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
     std::unique_ptr<FindData> d(new FindData);
 
-    d->clip           = vsapi->mapGetNode(in, "clip", 0, nullptr);
-    const auto vi     = vsapi->getVideoInfo(d->clip);
-    d->ref            = vsapi->mapGetNode(in, "ref", 0, nullptr);
-    const auto ref_vi = vsapi->getVideoInfo(d->ref);
+    d->clip     = vsapi->mapGetNode(in, "clip", 0, nullptr);
+    auto vi     = vsapi->getVideoInfo(d->clip);
+    d->ref      = vsapi->mapGetNode(in, "ref", 0, nullptr);
+    auto ref_vi = vsapi->getVideoInfo(d->ref);
     if (!vsh::isConstantVideoFormat(vi) || !vsh::isConstantVideoFormat(ref_vi) ||
         vi->format.sampleType != ref_vi->format.sampleType ||
         vi->format.bitsPerSample != ref_vi->format.bitsPerSample ||
