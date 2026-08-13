@@ -75,7 +75,7 @@ def letterbox_mask(
     letterbox = find_letterbox(clip, permanent, dynamic_ref, dynamic_ref_thr)
     letterbox = letterbox.akarin.PropExpr(lambda: dict(_VSLETTERBOX_AREA_MULTIPLIER=f"""
 x.VSLETTERBOX_BOTTOM_ROW 1 + x.VSLETTERBOX_TOP_ROW - {permanent_bottom_row} 1 + {permanent_top_row} - /
-{fullblack_thr} /
+{fullblack_thr} / 0 1 clamp
 """))
     letterbox_mask = norm_expr(letterbox, f"""
 Y {permanent_top_row} < mask_max
