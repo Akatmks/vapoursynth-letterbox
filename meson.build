@@ -24,7 +24,7 @@ vapoursynth_include = run_command(
 )
 vapoursynth_include = include_directories(vapoursynth_include.stdout().strip())
 
-shared_library('vsletterbox', sources,
+shared_module('vsletterbox', sources,
   include_directories: [vapoursynth_include],
   install: true,
   install_dir: py.get_install_dir(pure: false, subdir: 'vapoursynth/plugins')
