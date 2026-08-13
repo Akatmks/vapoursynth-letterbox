@@ -1,5 +1,9 @@
 name: build
-on: push
+on:
+  push:
+  release:
+    types:
+    - published
 
 jobs:
   build:
@@ -51,4 +55,22 @@ jobs:
     - uses: actions/upload-artifact@v7
       with:
         name: '${{ runner.os }} ${{ runner.arch }}'
-        path: dist/*.whl
+        path: dist/*
+
+  release:
+    needs: [build]
+    if: ${{ github.event_name == 'release' }}
+    environment:
+      name: pypi
+      url: https://pypi.org/p/vapoursynth-letterbox
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        path: dist
+        merge-multiple: true
+
+    - uses: pypa/gh-action-pypi-publish@release/v1
